@@ -7,25 +7,35 @@ const route = useRoute()
 
 await store.init()
 
-const currentUrl = route.path
+const page = ref<any>(null)
 
-// szukamy page_id w store.menus
-const pageId = findPageIdByUrl(store.menus, currentUrl)
+const loadPage = async () => {
+  const currentUrl = route.path
+  const pageId = findPageIdByUrl(store.menus, currentUrl)
 
-if (!pageId) throw createError({ statusCode: 404 })
+  if (!pageId) {
+    throw createError({ statusCode: 404 })
+  }
 
-// pobieramy stronę po page_id
-const { data: pageResponse } = await useFetch(
-  `${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`
-)
+  const response: any = await $fetch(
+    `${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`
+  )
 
-if (!pageResponse.value?.success) throw createError({ statusCode: 404 })
+  if (!response?.success) {
+    throw createError({ statusCode: 404 })
+  }
 
-const page = pageResponse.value.data
+  page.value = response.data
+}
+
+await loadPage()
+
+// 🔥 reaguje na zmianę route
+watch(() => route.fullPath, loadPage)
 </script>
 
 <template>
-  <div>
+  <div v-if="page">
     <h1 class="mb-3">{{ page.title }}</h1>
     <div v-html="page.content"></div>
   </div>

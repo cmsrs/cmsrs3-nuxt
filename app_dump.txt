@@ -69,13 +69,23 @@ export const useAppStore = defineStore('app', {
       if (this.initialized) return
 
       const config = useRuntimeConfig()
-      // pobieramy config
-      const { data: cfgData } = await useFetch(`${config.public.apiBase}/config`)
-      if (cfgData.value?.success) this.defaultLang = cfgData.value.data.default_lang
 
-      // pobieramy menu
-      const { data: menuData } = await useFetch(`${config.public.apiBase}/menus/${this.defaultLang}`)
-      if (menuData.value?.success) this.menus = menuData.value.data
+      // 🔥 używamy $fetch zamiast useFetch
+      const cfgData: any = await $fetch(
+        `${config.public.apiBase}/config`
+      )
+
+      if (cfgData?.success) {
+        this.defaultLang = cfgData.data.default_lang
+      }
+
+      const menuData: any = await $fetch(
+        `${config.public.apiBase}/menus/${this.defaultLang}`
+      )
+
+      if (menuData?.success) {
+        this.menus = menuData.data
+      }
 
       this.initialized = true
     }
@@ -118,6 +128,8 @@ const page = pageResponse.value.data
 <script setup lang="ts">
 const store = useAppStore()
 const config = useRuntimeConfig()
+
+await store.init()
 
 interface InnerPage {
   id: number
