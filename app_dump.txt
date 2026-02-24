@@ -1,0 +1,280 @@
+app
+├── app.vue
+├── components
+│   └── Slider.vue
+├── composables
+│   ├── useApi.ts
+│   └── useMenu.ts
+├── layouts
+│   └── default.vue
+├── middleware
+│   └── i18n.global.ts
+├── pages
+│   ├── index.vue
+│   └── [...slug].vue
+└── stores
+    └── app.ts
+
+7 directories, 9 files
+===== app/composables/useApi.ts =====
+export const useApi = () => {
+  const config = useRuntimeConfig()
+
+  const fetchApi = async <T>(url: string): Promise<T> => {
+    const { data, error } = await useFetch(url)
+    if (error.value || !data.value?.success) throw new Error('API error')
+    return data.value.data
+  }
+
+  return { fetchApi }
+}
+===== app/composables/useMenu.ts =====
+export const findPageIdByUrl = (menus: any[], currentUrl: string): number | null => {
+  for (const menu of menus) {
+
+    // jeśli menu ma bezpośredni url (np Contact)
+    if (menu.url === currentUrl) {
+      return menu.page_id
+    }
+
+    for (const page of menu.pages || []) {
+
+      if (page.url === currentUrl) {
+        return page.page_id
+      }
+
+      // children (1 poziom)
+      for (const child of page.children || []) {
+        if (child.url === currentUrl) {
+          return child.page_id
+        }
+      }
+    }
+  }
+
+  return null
+}
+===== app/stores/app.ts =====
+import { defineStore } from 'pinia'
+
+export const useAppStore = defineStore('app', {
+  state: () => ({
+    defaultLang: null as string | null,
+    initialized: false,
+    menus: [] as any[]
+  }),
+
+  actions: {
+    async init() {
+      if (this.initialized) return
+
+      const config = useRuntimeConfig()
+      // pobieramy config
+      const { data: cfgData } = await useFetch(`${config.public.apiBase}/config`)
+      if (cfgData.value?.success) this.defaultLang = cfgData.value.data.default_lang
+
+      // pobieramy menu
+      const { data: menuData } = await useFetch(`${config.public.apiBase}/menus/${this.defaultLang}`)
+      if (menuData.value?.success) this.menus = menuData.value.data
+
+      this.initialized = true
+    }
+  }
+})
+===== app/pages/[...slug].vue =====
+<script setup lang="ts">
+import { findPageIdByUrl } from '~/composables/useMenu'
+
+const store = useAppStore()
+const config = useRuntimeConfig()
+const route = useRoute()
+
+await store.init()
+
+const currentUrl = route.path
+
+// szukamy page_id w store.menus
+const pageId = findPageIdByUrl(store.menus, currentUrl)
+
+if (!pageId) throw createError({ statusCode: 404 })
+
+// pobieramy stronę po page_id
+const { data: pageResponse } = await useFetch(
+  `${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`
+)
+
+if (!pageResponse.value?.success) throw createError({ statusCode: 404 })
+
+const page = pageResponse.value.data
+</script>
+
+<template>
+  <div>
+    <h1 class="mb-3">{{ page.title }}</h1>
+    <div v-html="page.content"></div>
+  </div>
+</template>
+===== app/pages/index.vue =====
+<script setup lang="ts">
+const store = useAppStore()
+const config = useRuntimeConfig()
+
+interface InnerPage {
+  id: number
+  short_title: Record<string, string>
+  content: Record<string, string>
+  images?: any[]
+}
+
+const { data: response } = await useFetch(
+  `${config.public.apiBase}/pages-type/inner`
+)
+
+const inner = response.value?.data || []
+
+
+const slider = inner.find(i => i.short_title[store.defaultLang] === 'main_page_slider')
+const boxes = inner.filter(i => i.short_title[store.defaultLang].includes('main_page_box'))
+</script>
+
+<template>
+  <div>
+    <Slider v-if="slider" :images="slider.images" :lang="store.defaultLang" :domain="config.public.apiBase.replace('/api/headless','')" />
+
+    <div class="row mt-4">
+      <div v-for="box in boxes" :key="box.id" class="col-md-4">
+        <div class="card p-3 mb-3" v-html="box.content[store.defaultLang]"></div>
+      </div>
+    </div>
+  </div>
+</template>
+===== app/components/Slider.vue =====
+<script setup lang="ts">
+import { Swiper, SwiperSlide } from 'swiper/vue'
+
+interface Image {
+  id: number
+  fs: { medium: string }
+  alt: Record<string, string>
+}
+
+defineProps<{
+  images: Image[]
+  lang: string
+  domain: string
+}>()
+</script>
+
+<template>
+  <Swiper
+    :slides-per-view="1"
+    :loop="true"
+    :pagination="{ clickable: true }"
+  >
+    <SwiperSlide v-for="img in images" :key="img.id">
+      <img
+        class="img-fluid"
+        :src="domain + img.fs.medium"
+        :alt="img.alt[lang]"
+        loading="lazy"
+      />
+    </SwiperSlide>
+  </Swiper>
+</template>
+===== app/middleware/i18n.global.ts =====
+import type { NavigationGuard } from 'vue-router'
+
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  const store = useAppStore()  
+  await store.init()  
+})
+===== app/app.vue =====
+<template>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>    
+</template>
+
+===== app/layouts/default.vue =====
+<script setup lang="ts">
+const store = useAppStore()
+await store.init()
+
+const cleanUrl = (url?: string) => {
+  if (!url) return '/'
+  url = url.replace(/^https?:\/\/[^/]+/, '')
+  url = url.replace(/^\/[a-z]{2}\//, '/')
+  return url || '/'
+}
+</script>
+
+<template>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <NuxtLink class="navbar-brand" to="/">CMSRS</NuxtLink>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNavbar"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li
+          v-for="menu in store.menus"
+          :key="menu.menu_name"
+          class="nav-item"
+          :class="{ dropdown: menu.pages?.length > 1 }"
+        >
+          <NuxtLink
+            v-if="menu.pages?.length === 1"
+            class="nav-link"
+            :to="cleanUrl(menu.pages[0].url)"
+          >
+            {{ menu.pages[0].short_title }}
+          </NuxtLink>
+
+          <template v-else>
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+            >
+              {{ menu.menu_name }}
+            </a>
+
+            <ul class="dropdown-menu">
+              <li v-for="page in menu.pages" :key="page.page_id">
+                <NuxtLink
+                  class="dropdown-item"
+                  :to="cleanUrl(page.url)"
+                >
+                  {{ page.short_title }}
+                </NuxtLink>
+
+                <NuxtLink
+                  v-for="child in page.children"
+                  :key="child.page_id"
+                  class="dropdown-item ms-3"
+                  :to="cleanUrl(child.url)"
+                >
+                  {{ child.short_title }}
+                </NuxtLink>
+              </li>
+            </ul>
+          </template>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <slot />
+</div>
+</template>

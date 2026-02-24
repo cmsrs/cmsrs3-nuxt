@@ -1,23 +1,9 @@
 export const useApi = () => {
   const config = useRuntimeConfig()
 
-  const fetchApi = async (url: string) => {
+  const fetchApi = async <T>(url: string): Promise<T> => {
     const { data, error } = await useFetch(url)
-
-    if (error.value) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'API Error'
-      })
-    }
-
-    if (!data.value?.success) {
-      throw createError({
-        statusCode: 500,
-        statusMessage: 'Invalid API response'
-      })
-    }
-
+    if (error.value || !data.value?.success) throw new Error('API error')
     return data.value.data
   }
 
