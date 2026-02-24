@@ -5,6 +5,7 @@ export default defineNuxtConfig({
   modules: ['@pinia/nuxt'],
   css: [
     'bootstrap/dist/css/bootstrap.min.css',
+    'swiper/css/pagination',
     'swiper/css'
   ],
   routeRules: {

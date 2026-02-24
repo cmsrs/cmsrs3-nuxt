@@ -1,22 +1,18 @@
 export const findPageIdByUrl = (menus: any[], currentUrl: string): number | null => {
-  for (const menu of menus) {
+  // 🔹 usuń prefiks języka /en/, /pl/ itd.
+  const normalize = (url: string) => url.replace(/^\/[a-z]{2}\//, '/')
 
+  const cleanUrl = normalize(currentUrl)
+
+  for (const menu of menus) {
     // jeśli menu ma bezpośredni url (np Contact)
-    if (menu.url === currentUrl) {
-      return menu.page_id
-    }
+    if (menu.url && normalize(menu.url) === cleanUrl) return menu.page_id
 
     for (const page of menu.pages || []) {
+      if (page.url && normalize(page.url) === cleanUrl) return page.page_id
 
-      if (page.url === currentUrl) {
-        return page.page_id
-      }
-
-      // children (1 poziom)
       for (const child of page.children || []) {
-        if (child.url === currentUrl) {
-          return child.page_id
-        }
+        if (child.url && normalize(child.url) === cleanUrl) return child.page_id
       }
     }
   }

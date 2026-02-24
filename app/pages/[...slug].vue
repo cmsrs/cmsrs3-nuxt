@@ -5,37 +5,29 @@ const store = useAppStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 
-await store.init()
+// 🔹 czekamy, aż store zostanie zainicjalizowany
+if (!store.initialized) await store.init()
 
-const page = ref<any>(null)
+// 🔹 bierzemy ścieżkę i normalizujemy
+const currentUrl = route.path
 
-const loadPage = async () => {
-  const currentUrl = route.path
-  const pageId = findPageIdByUrl(store.menus, currentUrl)
+const pageId = findPageIdByUrl(store.menus, currentUrl)
 
-  if (!pageId) {
-    throw createError({ statusCode: 404 })
-  }
-
-  const response: any = await $fetch(
-    `${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`
-  )
-
-  if (!response?.success) {
-    throw createError({ statusCode: 404 })
-  }
-
-  page.value = response.data
+if (!pageId) {
+  console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
+  throw createError({ statusCode: 404 })
 }
 
-await loadPage()
+// 🔹 pobieramy stronę po page_id
+const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
 
-// 🔥 reaguje na zmianę route
-watch(() => route.fullPath, loadPage)
+if (!pageResponse?.data) throw createError({ statusCode: 404 })
+
+const page = pageResponse.data
 </script>
 
 <template>
-  <div v-if="page">
+  <div>
     <h1 class="mb-3">{{ page.title }}</h1>
     <div v-html="page.content"></div>
   </div>
