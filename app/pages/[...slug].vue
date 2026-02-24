@@ -19,7 +19,8 @@ if (!pageId) {
 }
 
 // 🔹 pobieramy stronę po page_id
-const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
+//const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
+const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.defaultLang}`)
 
 if (!pageResponse?.data) throw createError({ statusCode: 404 })
 
