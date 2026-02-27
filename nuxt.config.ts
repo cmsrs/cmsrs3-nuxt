@@ -1,5 +1,7 @@
 //import { defineNuxtConfig } from 'nuxt'
 
+const domain = 'http://demo-headless.cmsrs.pl'
+
 export default defineNuxtConfig({
   compatibilityDate: '2026-02-24',
   modules: ['@pinia/nuxt'],
@@ -13,7 +15,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      apiBase: 'http://demo-headless.cmsrs.pl/api/headless'
+      domain,
+      apiBase: `${domain}/api/headless`
     }
   },
   app: {

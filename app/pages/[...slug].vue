@@ -31,5 +31,14 @@ const page = pageResponse.data
   <div>
     <h1 class="mb-3">{{ page.title }}</h1>
     <div v-html="page.content"></div>
+    <div v-if="page.images" class="images-gallery mt-6">
+      <img
+        v-for="image in page.images"
+        :key="image.id"
+        :src="`${config.public.domain}${image.fs.medium}`"
+        :alt="(store.defaultLang && image.alt[store.defaultLang]) || image.name"
+        class="mb-4"
+      />
+    </div>
   </div>
 </template>
