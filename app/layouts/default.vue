@@ -13,7 +13,7 @@ const cleanUrl = (url?: string) => {
 <template>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <NuxtLink class="navbar-brand" to="/">CMSRS</NuxtLink>
+    <NuxtLink class="navbar-brand" to="/">cmsRS</NuxtLink>
 
     <button
       class="navbar-toggler"
@@ -33,11 +33,11 @@ const cleanUrl = (url?: string) => {
           :class="{ dropdown: menu.pages?.length > 1 }"
         >
           <NuxtLink
-            v-if="menu.pages?.length === 1"
+            v-if="menu.pages?.length === 0"
             class="nav-link"
-            :to="cleanUrl(menu.pages[0].url)"
+            :to="cleanUrl(menu.url)"
           >
-            {{ menu.pages[0].short_title }}
+            {{ menu.menu_name }}
           </NuxtLink>
 
           <template v-else>
