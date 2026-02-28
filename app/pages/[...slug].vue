@@ -89,6 +89,9 @@ const contact = async (event: Event) => {
         <div v-if="messageInfo" class="mt-3 text-green-500">{{ messageInfo }}</div>
       </form>
     </div>
+    <div v-else-if="page.type === 'shop'">
+      <pre>{{ JSON.stringify(page, null, 2) }}</pre>
+    </div>
     <div v-else>
       <div v-html="page.content"></div>
       <div v-if="page.images" class="images-gallery mt-6">
