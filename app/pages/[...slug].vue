@@ -90,7 +90,26 @@ const contact = async (event: Event) => {
       </form>
     </div>
     <div v-else-if="page.type === 'shop'">
-      <pre>{{ JSON.stringify(page, null, 2) }}</pre>
+    <h2 class="mb-6 text-2xl font-bold">{{ page.title }}</h2>
+      <div class="grid grid-cols-1 gap-6">
+      <div v-for="product in page.products" :key="product.id" class="border rounded-lg overflow-hidden shadow-md hover:shadow-lg transition">
+      <div v-if="product.images?.length" class="relative bg-gray-200 h-64">
+      <img
+        :src="`${config.public.domain}${product.images[0].fs.medium}`"
+        :alt="product.images[0].alt || product.product_name"
+        class="w-full h-full object-cover"
+      />
+      </div>
+      <div class="p-4">
+      <h3 class="text-lg font-semibold mb-2">{{ product.product_name }}</h3>
+      <p class="text-gray-600 text-sm mb-3">{{ product.product_description }}</p>
+      <div class="flex justify-between items-center">
+        <span class="text-xl font-bold text-blue-600">{{ product.price_description }}</span>
+        <button class="btn btn-primary text-sm">Add to Cart</button>
+      </div>
+      </div>
+      </div>
+      </div>
     </div>
     <div v-else>
       <div v-html="page.content"></div>
