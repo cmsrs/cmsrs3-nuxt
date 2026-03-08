@@ -10,10 +10,19 @@ const cleanUrl = (url?: string) => {
 }
 </script>
 
+<style scoped>
+.logo {
+  max-height: 40px;    /* lub inna wartość */
+  width: auto;         /* zachowaj proporcje */
+}
+</style>
+
 <template>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <NuxtLink class="navbar-brand" to="/">cmsRS</NuxtLink>
+    <NuxtLink class="navbar-brand" to="/">
+      <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" >
+    </NuxtLink>
 
     <button
       class="navbar-toggler"
@@ -72,6 +81,23 @@ const cleanUrl = (url?: string) => {
           </template>
         </li>
       </ul>
+
+      <ul class="nav navbar-nav ms-auto" >
+        <!-- Authentication Links -->
+                          <li class="d-flex flex-row">
+                                <div class="ms-2  nav-item">
+              <a class="changelang nav-link  " href="/">
+                <img src="/images/en.png" alt="en" /> EN
+              </a>
+            </div>
+                                  <div class="ms-2  nav-item">
+              <a class="changelang nav-link  active" href="/pl">
+                <img src="/images/pl.png" alt="pl" /> PL
+              </a>
+            </div>
+                  </li>
+      </ul>
+
     </div>
   </div>
 </nav>
