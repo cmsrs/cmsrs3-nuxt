@@ -109,12 +109,15 @@ const contact = async (event: Event) => {
               <li>Cena: {{ product.price_description }}</li>
               <li v-if="product.product_description">{{ product.product_description }}</li>
             </ul>
+            <!-- to do -->
+            <!--            
             <button 
               @click="addToCart({ id: product.id, name: product.product_name, price: product.price })" 
               class="add-to-cart btn"
             >
               Dodaj do koszyka
             </button>
+            -->
           </div>
         </div>
       </div>
