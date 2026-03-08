@@ -3,7 +3,7 @@ const store = useAppStore()
 await store.init()
 const { switchLocalePath } = useLocale()
 
-const cleanUrl = (url?: string) => {
+const localizedUrl = (url?: string) => {
   if (!url) return '/'
   // Usuń domenę (jeśli jest)
   url = url.replace(/^https?:\/\/[^/]+/, '')
@@ -51,7 +51,7 @@ const cleanUrl = (url?: string) => {
           <NuxtLink
             v-if="menu.pages?.length === 0"
             class="nav-link"
-            :to="cleanUrl(menu.url)"
+            :to="localizedUrl(menu.url)"
           >
             {{ menu.menu_name }}
           </NuxtLink>
@@ -70,7 +70,7 @@ const cleanUrl = (url?: string) => {
               <li v-for="page in menu.pages" :key="page.page_id">
                 <NuxtLink
                   class="dropdown-item"
-                  :to="cleanUrl(page.url)"
+                  :to="localizedUrl(page.url)"
                 >
                   {{ page.short_title }}
                 </NuxtLink>
@@ -79,7 +79,7 @@ const cleanUrl = (url?: string) => {
                   v-for="child in page.children"
                   :key="child.page_id"
                   class="dropdown-item ms-3"
-                  :to="cleanUrl(child.url)"
+                  :to="localizedUrl(child.url)"
                 >
                   {{ child.short_title }}
                 </NuxtLink>

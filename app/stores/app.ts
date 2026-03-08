@@ -4,8 +4,8 @@ export const useAppStore = defineStore('app', {
   state: () => ({
     defaultLang: null as string | null,
     initialized: false,
-    menus: [] as any[],
-    currentLang: null as string | null,   // aktualny język
+    menus: [] as any[],          // menu dla aktualnego języka
+    currentLang: null as string | null,
   }),
 
   actions: {
@@ -13,29 +13,29 @@ export const useAppStore = defineStore('app', {
       if (this.initialized) return
 
       const config = useRuntimeConfig()
-
-      // 🔥 używamy $fetch zamiast useFetch
-      const cfgData: any = await $fetch(
-        `${config.public.apiBase}/config`
-      )
+      const cfgData: any = await $fetch(`${config.public.apiBase}/config`)
 
       if (cfgData?.success) {
         this.defaultLang = cfgData.data.default_lang
       }
 
-      const menuData: any = await $fetch(
-        `${config.public.apiBase}/menus/${this.defaultLang}`
-      )
+      this.initialized = true
+    },
+
+    async setCurrentLang(lang: string) {
+      if (this.currentLang === lang && this.menus.length) return
+
+      this.currentLang = lang
+      await this.fetchMenus(lang)
+    },
+
+    async fetchMenus(lang: string) {
+      const config = useRuntimeConfig()
+      const menuData: any = await $fetch(`${config.public.apiBase}/menus/${lang}`)
 
       if (menuData?.success) {
         this.menus = menuData.data
       }
-
-      this.initialized = true
     },
-    setCurrentLang(lang: string) {
-      this.currentLang = lang
-    },
-
-  }
+  },
 })
