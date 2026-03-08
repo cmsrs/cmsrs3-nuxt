@@ -4,6 +4,7 @@ app
 │   └── Slider.vue
 ├── composables
 │   ├── useApi.ts
+│   ├── useLocale.ts
 │   └── useMenu.ts
 ├── layouts
 │   └── default.vue
@@ -15,7 +16,7 @@ app
 └── stores
     └── app.ts
 
-7 directories, 9 files
+7 directories, 10 files
 ===== app/composables/useApi.ts =====
 interface ApiResponse<T> {
   success: boolean
@@ -59,6 +60,33 @@ export const findPageIdByUrl = (menus: any[], currentUrl: string): number | null
 
   return null
 }
+===== app/composables/useLocale.ts =====
+export const useLocale = () => {
+  const route = useRoute()
+  const store = useAppStore()
+
+  const switchLocalePath = (locale: string): string => {
+    const currentPath = route.path
+    const segments = currentPath.split('/').filter(Boolean)
+
+    // Usuń istniejący prefiks językowy (jeśli jest)
+    if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '/')) {
+      segments.shift()
+    }
+
+    const pathWithoutPrefix = '/' + segments.join('/')
+
+    // Dla języka domyślnego – brak prefiksu
+    if (locale === store.defaultLang) {
+      return pathWithoutPrefix === '' ? '/' : pathWithoutPrefix
+    }
+
+    // Dla innych języków – dodaj prefiks
+    return `/${locale}${pathWithoutPrefix === '/' ? '' : pathWithoutPrefix}`
+  }
+
+  return { switchLocalePath }
+}
 ===== app/stores/app.ts =====
 import { defineStore } from 'pinia'
 
@@ -66,7 +94,8 @@ export const useAppStore = defineStore('app', {
   state: () => ({
     defaultLang: null as string | null,
     initialized: false,
-    menus: [] as any[]
+    menus: [] as any[],          // menu dla aktualnego języka
+    currentLang: null as string | null,
   }),
 
   actions: {
@@ -74,27 +103,31 @@ export const useAppStore = defineStore('app', {
       if (this.initialized) return
 
       const config = useRuntimeConfig()
-
-      // 🔥 używamy $fetch zamiast useFetch
-      const cfgData: any = await $fetch(
-        `${config.public.apiBase}/config`
-      )
+      const cfgData: any = await $fetch(`${config.public.apiBase}/config`)
 
       if (cfgData?.success) {
         this.defaultLang = cfgData.data.default_lang
       }
 
-      const menuData: any = await $fetch(
-        `${config.public.apiBase}/menus/${this.defaultLang}`
-      )
+      this.initialized = true
+    },
+
+    async setCurrentLang(lang: string) {
+      if (this.currentLang === lang && this.menus.length) return
+
+      this.currentLang = lang
+      await this.fetchMenus(lang)
+    },
+
+    async fetchMenus(lang: string) {
+      const config = useRuntimeConfig()
+      const menuData: any = await $fetch(`${config.public.apiBase}/menus/${lang}`)
 
       if (menuData?.success) {
         this.menus = menuData.data
       }
-
-      this.initialized = true
-    }
-  }
+    },
+  },
 })
 ===== app/pages/[...slug].vue =====
 <script setup lang="ts">
@@ -106,6 +139,7 @@ const route = useRoute()
 
 // 🔹 czekamy, aż store zostanie zainicjalizowany
 if (!store.initialized) await store.init()
+if (!store.currentLang) store.setCurrentLang(store.defaultLang || 'en') // zabezpieczenie
 
 // 🔹 bierzemy ścieżkę i normalizujemy
 const currentUrl = route.path
@@ -119,7 +153,7 @@ if (!pageId) {
 
 // 🔹 pobieramy stronę po page_id
 //const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
-const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.defaultLang}`)
+const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
 
 if (!pageResponse?.data) throw createError({ statusCode: 404 })
 
@@ -207,12 +241,15 @@ const contact = async (event: Event) => {
               <li>Cena: {{ product.price_description }}</li>
               <li v-if="product.product_description">{{ product.product_description }}</li>
             </ul>
+            <!-- to do -->
+            <!--            
             <button 
               @click="addToCart({ id: product.id, name: product.product_name, price: product.price })" 
               class="add-to-cart btn"
             >
               Dodaj do koszyka
             </button>
+            -->
           </div>
         </div>
       </div>
@@ -238,33 +275,44 @@ const contact = async (event: Event) => {
 const store = useAppStore()
 const config = useRuntimeConfig()
 
+// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
 await store.init()
-
-interface InnerPage {
-  id: number
-  short_title: Record<string, string>
-  content: Record<string, string>
-  images?: any[]
+if (!store.currentLang) {
+  await store.setCurrentLang(store.defaultLang || 'en')
 }
 
-const { data: response } = await useFetch(
+// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
+const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
   `${config.public.apiBase}/pages-type/inner`
 )
 
-const inner = response.value?.data || []
+// Reaktywne obliczenia na podstawie danych
+const inner = computed(() => response.value?.data || [])
 
+// Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
+const slider = computed(() =>
+  inner.value.find(i => i.short_title?.[store.defaultLang!] === 'main_page_slider')
+)
 
-const slider = inner.find(i => i.short_title[store.defaultLang] === 'main_page_slider')
-const boxes = inner.filter(i => i.short_title[store.defaultLang].includes('main_page_box'))
+const boxes = computed(() =>
+  inner.value.filter(i => i.short_title?.[store.defaultLang!]?.includes('main_page_box'))
+)
+
 </script>
 
 <template>
   <div>
-    <Slider v-if="slider" :images="slider.images" :lang="store.defaultLang" :domain="config.public.apiBase.replace('/api/headless','')" />
+    <Slider
+      v-if="slider"
+      :images="slider.images || []"
+      :lang="store.currentLang || store.defaultLang || 'en'"
+      :domain="config.public.apiBase.replace('/api/headless', '')"
+    />
 
     <div class="row mt-4">
       <div v-for="box in boxes" :key="box.id" class="col-md-4">
-        <div class="card p-3 mb-3" v-html="box.content[store.defaultLang]"></div>
+        <!-- Treść z aktualnego języka -->
+        <div class="card p-3 mb-3" v-html="box.content?.[store.currentLang!]"></div>
       </div>
     </div>
   </div>
@@ -330,11 +378,28 @@ const modules = [Pagination]
   </Swiper>
 </template>
 ===== app/middleware/i18n.global.ts =====
-import type { NavigationGuard } from 'vue-router'
-
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const store = useAppStore()  
-  await store.init()  
+  const store = useAppStore()
+  await store.init()
+
+  const path = to.path
+  const supportedLocales = ['en', 'pl']
+  const segments = path.split('/').filter(Boolean)
+
+  // Sprawdź, czy pierwszy segment to dwuliterowy kod języka
+  if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '')) {
+    const lang = segments[0] || 'en'
+    if (supportedLocales.includes(lang)) {
+      await store.setCurrentLang(lang)
+    } else {
+      // Nieobsługiwany kod języka – przekieruj na ścieżkę bez prefiksu
+      const newPath = '/' + segments.slice(1).join('/')
+      return navigateTo(newPath || '/', { redirectCode: 301 })
+    }
+  } else {
+    // Brak prefiksu językowego – ustaw domyślny
+    await store.setCurrentLang(store.defaultLang!)
+  }
 })
 ===== app/app.vue =====
 <template>
@@ -347,12 +412,19 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 <script setup lang="ts">
 const store = useAppStore()
 await store.init()
+const { switchLocalePath } = useLocale()
 
-const cleanUrl = (url?: string) => {
+const localizedUrl = (url?: string) => {
   if (!url) return '/'
+  // Usuń domenę (jeśli jest)
   url = url.replace(/^https?:\/\/[^/]+/, '')
-  url = url.replace(/^\/[a-z]{2}\//, '/')
-  return url || '/'
+  // Usuń istniejący prefiks językowy (jeśli jest)
+  const withoutLang = url.replace(/^\/[a-z]{2}\//, '/')
+  // Dodaj aktualny język (jeśli nie domyślny)
+  if (store.currentLang === store.defaultLang) {
+    return withoutLang || '/'
+  }
+  return `/${store.currentLang}${withoutLang === '/' ? '' : withoutLang}`
 }
 </script>
 
@@ -390,7 +462,7 @@ const cleanUrl = (url?: string) => {
           <NuxtLink
             v-if="menu.pages?.length === 0"
             class="nav-link"
-            :to="cleanUrl(menu.url)"
+            :to="localizedUrl(menu.url)"
           >
             {{ menu.menu_name }}
           </NuxtLink>
@@ -409,7 +481,7 @@ const cleanUrl = (url?: string) => {
               <li v-for="page in menu.pages" :key="page.page_id">
                 <NuxtLink
                   class="dropdown-item"
-                  :to="cleanUrl(page.url)"
+                  :to="localizedUrl(page.url)"
                 >
                   {{ page.short_title }}
                 </NuxtLink>
@@ -418,7 +490,7 @@ const cleanUrl = (url?: string) => {
                   v-for="child in page.children"
                   :key="child.page_id"
                   class="dropdown-item ms-3"
-                  :to="cleanUrl(child.url)"
+                  :to="localizedUrl(child.url)"
                 >
                   {{ child.short_title }}
                 </NuxtLink>
@@ -428,22 +500,28 @@ const cleanUrl = (url?: string) => {
         </li>
       </ul>
 
-      <ul class="nav navbar-nav ms-auto" >
-        <!-- Authentication Links -->
-                          <li class="d-flex flex-row">
-                                <div class="ms-2  nav-item">
-              <a class="changelang nav-link  " href="/">
-                <img src="/images/en.png" alt="en" /> EN
-              </a>
-            </div>
-                                  <div class="ms-2  nav-item">
-              <a class="changelang nav-link  active" href="/pl">
-                <img src="/images/pl.png" alt="pl" /> PL
-              </a>
-            </div>
-                  </li>
+      <ul class="nav navbar-nav ms-auto">
+        <li class="d-flex flex-row">
+          <div class="ms-2 nav-item">
+            <NuxtLink
+              class="changelang nav-link"
+              :class="{ active: store.currentLang === 'en' }"
+              :to="switchLocalePath('en')"
+            >
+              <img src="/images/en.png" alt="en" /> EN
+            </NuxtLink>
+          </div>
+          <div class="ms-2 nav-item">
+            <NuxtLink
+              class="changelang nav-link"
+              :class="{ active: store.currentLang === 'pl' }"
+              :to="switchLocalePath('pl')"
+            >
+              <img src="/images/pl.png" alt="pl" /> PL
+            </NuxtLink>
+          </div>
+        </li>
       </ul>
-
     </div>
   </div>
 </nav>
