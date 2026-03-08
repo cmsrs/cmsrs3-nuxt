@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const store = useAppStore()
 await store.init()
+const { switchLocalePath } = useLocale()
 
 const cleanUrl = (url?: string) => {
   if (!url) return '/'
@@ -82,22 +83,28 @@ const cleanUrl = (url?: string) => {
         </li>
       </ul>
 
-      <ul class="nav navbar-nav ms-auto" >
-        <!-- Authentication Links -->
-                          <li class="d-flex flex-row">
-                                <div class="ms-2  nav-item">
-              <a class="changelang nav-link  " href="/">
-                <img src="/images/en.png" alt="en" /> EN
-              </a>
-            </div>
-                                  <div class="ms-2  nav-item">
-              <a class="changelang nav-link  active" href="/pl">
-                <img src="/images/pl.png" alt="pl" /> PL
-              </a>
-            </div>
-                  </li>
+      <ul class="nav navbar-nav ms-auto">
+        <li class="d-flex flex-row">
+          <div class="ms-2 nav-item">
+            <NuxtLink
+              class="changelang nav-link"
+              :class="{ active: store.currentLang === 'en' }"
+              :to="switchLocalePath('en')"
+            >
+              <img src="/images/en.png" alt="en" /> EN
+            </NuxtLink>
+          </div>
+          <div class="ms-2 nav-item">
+            <NuxtLink
+              class="changelang nav-link"
+              :class="{ active: store.currentLang === 'pl' }"
+              :to="switchLocalePath('pl')"
+            >
+              <img src="/images/pl.png" alt="pl" /> PL
+            </NuxtLink>
+          </div>
+        </li>
       </ul>
-
     </div>
   </div>
 </nav>

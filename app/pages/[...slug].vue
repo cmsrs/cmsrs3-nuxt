@@ -7,6 +7,7 @@ const route = useRoute()
 
 // 🔹 czekamy, aż store zostanie zainicjalizowany
 if (!store.initialized) await store.init()
+if (!store.currentLang) store.setCurrentLang(store.defaultLang || 'en') // zabezpieczenie
 
 // 🔹 bierzemy ścieżkę i normalizujemy
 const currentUrl = route.path
@@ -20,7 +21,7 @@ if (!pageId) {
 
 // 🔹 pobieramy stronę po page_id
 //const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
-const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.defaultLang}`)
+const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
 
 if (!pageResponse?.data) throw createError({ statusCode: 404 })
 

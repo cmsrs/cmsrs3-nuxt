@@ -4,7 +4,8 @@ export const useAppStore = defineStore('app', {
   state: () => ({
     defaultLang: null as string | null,
     initialized: false,
-    menus: [] as any[]
+    menus: [] as any[],
+    currentLang: null as string | null,   // aktualny język
   }),
 
   actions: {
@@ -31,6 +32,10 @@ export const useAppStore = defineStore('app', {
       }
 
       this.initialized = true
-    }
+    },
+    setCurrentLang(lang: string) {
+      this.currentLang = lang
+    },
+
   }
 })

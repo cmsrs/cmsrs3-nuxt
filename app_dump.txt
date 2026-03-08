@@ -118,17 +118,119 @@ if (!pageId) {
 }
 
 // 🔹 pobieramy stronę po page_id
-const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
+//const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
+const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.defaultLang}`)
 
 if (!pageResponse?.data) throw createError({ statusCode: 404 })
 
 const page = pageResponse.data
-</script>
 
+const email = ref('')
+const message = ref('')
+const emailErr = ref('')
+const messageErr = ref('')
+const messageInfo = ref('')
+
+const contact = async (event: Event) => {
+  event.preventDefault()
+  emailErr.value = ''
+  messageErr.value = ''
+  messageInfo.value = ''
+
+  if (!email.value) {
+    emailErr.value = 'Email is required'
+    return
+  }
+  if (!message.value) {
+    messageErr.value = 'Message is required'
+    return
+  }
+
+  try {
+    await $fetch(`${config.public.domain}/api/contact/${store.defaultLang}`, {
+      method: 'POST',
+      body: { email: email.value, message: message.value, pageId: page.id }
+    })
+    messageInfo.value = 'Message sent successfully'
+    email.value = ''
+    message.value = ''
+  } catch (error) {
+    messageInfo.value = "We're sorry, but this action is not available in the demo version." //'Error sending message'
+  }
+}
+</script>
 <template>
   <div>
     <h1 class="mb-3">{{ page.title }}</h1>
-    <div v-html="page.content"></div>
+    <div v-if="page.type === 'contact'">
+      <form @submit="contact">
+        <div class="mb-4">
+          <input
+        v-model="email"
+        type="email"
+        placeholder="Your email"
+        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <span v-if="emailErr" class="text-red-500 text-sm">{{ emailErr }}</span>
+        </div>
+        <div class="mb-6">
+          <textarea
+        v-model="message"
+        placeholder="Your message"
+        rows="8"
+        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          ></textarea>
+          <span v-if="messageErr" class="text-red-500 text-sm">{{ messageErr }}</span>
+        </div>
+        <button type="submit" class="btn btn-secondary">
+          Send
+        </button>
+        <div v-if="messageInfo" class="mt-3 text-green-500">{{ messageInfo }}</div>
+      </form>
+    </div>
+    <div v-else-if="page.type === 'shop'">
+    <div class="row">
+      <div v-for="(product, index) in page.products" :key="product.id" class="col-md-6 mb-5">
+        <div class="row">
+          <div class="col">
+            <a v-if="product.images?.length" :href="`/${store.defaultLang}${product.url}`">
+              <img 
+                class="m-3" 
+                :src="`${config.public.domain}${product.images[0].fs.medium}`"
+                :alt="product.images[0].alt || product.product_name"
+              />
+            </a>
+            <ul class="ms-3 list-unstyled">
+              <li class="product-test">{{ product.product_name }}</li>
+              <li>Nazwa: <a :href="`/${store.defaultLang}${product.url}`">{{ product.product_name }}</a></li>
+              <li v-if="product.sku">Sku: {{ product.sku }}</li>
+              <li>Cena: {{ product.price_description }}</li>
+              <li v-if="product.product_description">{{ product.product_description }}</li>
+            </ul>
+            <button 
+              @click="addToCart({ id: product.id, name: product.product_name, price: product.price })" 
+              class="add-to-cart btn"
+            >
+              Dodaj do koszyka
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </div>
+    <div v-else>
+      <div v-html="page.content"></div>
+      <div v-if="page.images" class="images-gallery mt-6">
+        <img
+          v-for="image in page.images"
+          :key="image.id"
+          :src="`${config.public.domain}${image.fs.medium}`"
+          :alt="(store.defaultLang && image.alt[store.defaultLang]) || image.name"
+          class="mb-4"
+        />
+      </div>
+    </div>
   </div>
 </template>
 ===== app/pages/index.vue =====
@@ -170,6 +272,7 @@ const boxes = inner.filter(i => i.short_title[store.defaultLang].includes('main_
 ===== app/components/Slider.vue =====
 <script setup lang="ts">
 import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Pagination } from 'swiper/modules'
 
 interface Image {
   id: number
@@ -182,13 +285,39 @@ defineProps<{
   lang: string
   domain: string
 }>()
+
+const modules = [Pagination]
 </script>
+
+<style scoped>
+.swiper {
+  max-height: 400px;
+}
+
+.swiper-slide {
+  height: 400px;
+  overflow: hidden;
+}
+
+:deep(.swiper-pagination-bullet-active) {
+  background-color: #000;
+}
+
+.img-fluid {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+</style>
+
+
 
 <template>
   <Swiper
     :slides-per-view="1"
     :loop="true"
     :pagination="{ clickable: true }"
+    :modules="modules"
   >
     <SwiperSlide v-for="img in images" :key="img.id">
       <img
@@ -227,10 +356,19 @@ const cleanUrl = (url?: string) => {
 }
 </script>
 
+<style scoped>
+.logo {
+  max-height: 40px;    /* lub inna wartość */
+  width: auto;         /* zachowaj proporcje */
+}
+</style>
+
 <template>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <NuxtLink class="navbar-brand" to="/">CMSRS</NuxtLink>
+    <NuxtLink class="navbar-brand" to="/">
+      <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" >
+    </NuxtLink>
 
     <button
       class="navbar-toggler"
@@ -250,11 +388,11 @@ const cleanUrl = (url?: string) => {
           :class="{ dropdown: menu.pages?.length > 1 }"
         >
           <NuxtLink
-            v-if="menu.pages?.length === 1"
+            v-if="menu.pages?.length === 0"
             class="nav-link"
-            :to="cleanUrl(menu.pages[0].url)"
+            :to="cleanUrl(menu.url)"
           >
-            {{ menu.pages[0].short_title }}
+            {{ menu.menu_name }}
           </NuxtLink>
 
           <template v-else>
@@ -289,6 +427,23 @@ const cleanUrl = (url?: string) => {
           </template>
         </li>
       </ul>
+
+      <ul class="nav navbar-nav ms-auto" >
+        <!-- Authentication Links -->
+                          <li class="d-flex flex-row">
+                                <div class="ms-2  nav-item">
+              <a class="changelang nav-link  " href="/">
+                <img src="/images/en.png" alt="en" /> EN
+              </a>
+            </div>
+                                  <div class="ms-2  nav-item">
+              <a class="changelang nav-link  active" href="/pl">
+                <img src="/images/pl.png" alt="pl" /> PL
+              </a>
+            </div>
+                  </li>
+      </ul>
+
     </div>
   </div>
 </nav>

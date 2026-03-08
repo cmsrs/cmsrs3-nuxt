@@ -4,12 +4,8 @@ const config = useRuntimeConfig()
 
 await store.init()
 
-interface InnerPage {
-  id: number
-  short_title: Record<string, string>
-  content: Record<string, string>
-  images?: any[]
-}
+if (!store.currentLang) store.setCurrentLang(store.defaultLang || 'en')
+
 
 const { data: response } = await useFetch(
   `${config.public.apiBase}/pages-type/inner`
@@ -18,13 +14,13 @@ const { data: response } = await useFetch(
 const inner = response.value?.data || []
 
 
-const slider = inner.find(i => i.short_title[store.defaultLang] === 'main_page_slider')
-const boxes = inner.filter(i => i.short_title[store.defaultLang].includes('main_page_box'))
+const slider = inner.find(i => i.short_title[store.defaultLang || 'en'] === 'main_page_slider')
+const boxes = inner.filter(i => i.short_title[store.defaultLang || 'en'].includes('main_page_box'))
 </script>
 
 <template>
   <div>
-    <Slider v-if="slider" :images="slider.images" :lang="store.defaultLang" :domain="config.public.apiBase.replace('/api/headless','')" />
+    <Slider v-if="slider" :images="slider.images" :lang="store.defaultLang || 'en'" :domain="config.public.apiBase.replace('/api/headless','')" />
 
     <div class="row mt-4">
       <div v-for="box in boxes" :key="box.id" class="col-md-4">
