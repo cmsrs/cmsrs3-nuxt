@@ -24,7 +24,7 @@ const boxes = inner.filter(i => i.short_title[store.defaultLang || 'en'].include
 
     <div class="row mt-4">
       <div v-for="box in boxes" :key="box.id" class="col-md-4">
-        <div class="card p-3 mb-3" v-html="box.content[store.defaultLang]"></div>
+        <div class="card p-3 mb-3" v-html="box.content[store.defaultLang || 'en']"></div>
       </div>
     </div>
   </div>

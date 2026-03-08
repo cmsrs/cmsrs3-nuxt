@@ -1,21 +1,25 @@
-import type { NavigationGuard } from 'vue-router'
-
 export default defineNuxtRouteMiddleware(async (to, from) => {
-  const store = useAppStore()  
-  await store.init()  
+  const store = useAppStore()
+  await store.init()
 
-  // Wyciągnij język z pierwszej części ścieżki (jeśli istnieje)
   const path = to.path
-  const match = path.match(/^\/([a-z]{2})\//)
-  let lang = store.defaultLang || 'en'
+  const supportedLocales = ['en', 'pl']
+  const segments = path.split('/').filter(Boolean)
 
-  if (match && match[1] && ['en', 'pl'].includes(match[1])) {
-    lang = match[1]
-  } else if (path === '/') {
-    // Strona główna – domyślny język
-    lang = store.defaultLang || 'en'
+  // Sprawdź, czy pierwszy segment to dwuliterowy kod języka
+  if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '/')) {
+    const lang = segments[0]
+    if (supportedLocales.includes(lang || 'en')) {
+      store.setCurrentLang(lang || 'en')
+    } else {
+      // Nieobsługiwany kod języka – przekieruj na ścieżkę bez prefiksu
+      const newPath = '/' + segments.slice(1).join('/')
+      return navigateTo(newPath || '/', { redirectCode: 301 })
+    }
+  } else {
+    // Brak prefiksu językowego
+    store.setCurrentLang(store.defaultLang || 'en')
+    // Jeśli pierwszy segment istnieje i nie jest dwuliterowy (np. 'pls'), 
+    // pozostaje on jako część ścieżki – to nie jest prefiks języka
   }
-
-  store.setCurrentLang(lang)
-
 })

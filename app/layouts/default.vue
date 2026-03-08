@@ -5,9 +5,15 @@ const { switchLocalePath } = useLocale()
 
 const cleanUrl = (url?: string) => {
   if (!url) return '/'
+  // Usuń domenę (jeśli jest)
   url = url.replace(/^https?:\/\/[^/]+/, '')
-  url = url.replace(/^\/[a-z]{2}\//, '/')
-  return url || '/'
+  // Usuń istniejący prefiks językowy (jeśli jest)
+  const withoutLang = url.replace(/^\/[a-z]{2}\//, '/')
+  // Dodaj aktualny język (jeśli nie domyślny)
+  if (store.currentLang === store.defaultLang) {
+    return withoutLang || '/'
+  }
+  return `/${store.currentLang}${withoutLang === '/' ? '' : withoutLang}`
 }
 </script>
 
