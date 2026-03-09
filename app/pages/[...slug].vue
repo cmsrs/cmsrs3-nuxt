@@ -7,33 +7,36 @@ const route = useRoute()
 
 // Inicjalizacja store
 if (!store.initialized) await store.init()
-if (!store.currentLang) await store.setCurrentLang(store.defaultLang || 'en')
 
-// Pobierz bieżącą ścieżkę
+// Pobierz język z URL
+const segments = route.path.split('/').filter(Boolean)
+const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
+
+// WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
+await store.setCurrentLang(langFromUrl)
+
 const currentUrl = route.path
 
-// Znajdź pageId na podstawie menu
+// Znajdź pageId
 const pageId = findPageIdByUrl(store.menus, currentUrl)
 
-// Sprawdź, czy to strona główna (po normalizacji daje '/')
-//const isHome = !pageId && currentUrl.replace(/^\/[a-z]{2}(\/|$)/, '/') === '/'
-const isHome = currentUrl === '/' || 
-               currentUrl === '/en' || 
-               currentUrl === '/pl' || 
-               currentUrl === '/en/' || 
-               currentUrl === '/pl/'
-
+// Debugowanie (usuń po rozwiązaniu problemu)
+if (!pageId && currentUrl !== '/' ) {
+  console.log('DEBUG: Szukam URL:', currentUrl, 'znormalizowany:', currentUrl.replace(/^\/(pl|en)(\/|$)/, '/').replace(/^\/cms(\/|$)/, '/'))
+}
+// 5. Sprawdź, czy to strona główna
+const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
 
 if (!isHome && !pageId) {
   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
-  throw createError({ statusCode: 404 })
+  throw createError({ statusCode: 404, message: 'Page not found' })
 }
 
+// 6. Pobranie danych strony
 let page = null
-if (!isHome) {
-  // Pobierz dane strony
+if (!isHome && pageId) {
   const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
-  if (!pageResponse?.data) throw createError({ statusCode: 404 })
+  if (!pageResponse?.success) throw createError({ statusCode: 404 })
   page = pageResponse.data
 }
 
