@@ -1,6 +1,7 @@
 app
 ├── app.vue
 ├── components
+│   ├── HomePage.vue
 │   └── Slider.vue
 ├── composables
 │   ├── useApi.ts
@@ -16,7 +17,7 @@ app
 └── stores
     └── app.ts
 
-7 directories, 10 files
+7 directories, 11 files
 ===== app/composables/useApi.ts =====
 interface ApiResponse<T> {
   success: boolean
@@ -40,13 +41,12 @@ export const useApi = () => {
 }
 ===== app/composables/useMenu.ts =====
 export const findPageIdByUrl = (menus: any[], currentUrl: string): number | null => {
-  // 🔹 usuń prefiks języka /en/, /pl/ itd.
-  const normalize = (url: string) => url.replace(/^\/[a-z]{2}\//, '/')
+  // 🔹 usuń prefiks języka /en, /pl/ itd. (wraz z opcjonalnym ukośnikiem)
+  const normalize = (url: string) => url.replace(/^\/[a-z]{2}(\/|$)/, '/')
 
   const cleanUrl = normalize(currentUrl)
 
   for (const menu of menus) {
-    // jeśli menu ma bezpośredni url (np Contact)
     if (menu.url && normalize(menu.url) === cleanUrl) return menu.page_id
 
     for (const page of menu.pages || []) {
@@ -69,19 +69,19 @@ export const useLocale = () => {
     const currentPath = route.path
     const segments = currentPath.split('/').filter(Boolean)
 
-    // Usuń istniejący prefiks językowy (jeśli jest)
-    if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '/')) {
+    // 1. Usuń istniejący prefiks (pl lub en)
+    if (segments.length > 0 && /^(pl|en)$/.test(segments[0])) {
       segments.shift()
     }
 
     const pathWithoutPrefix = '/' + segments.join('/')
 
-    // Dla języka domyślnego – brak prefiksu
-    if (locale === store.defaultLang) {
-      return pathWithoutPrefix === '' ? '/' : pathWithoutPrefix
+    // 2. Specjalny przypadek: Strona główna w języku angielskim ma być czystym "/"
+    if (locale === 'en' && pathWithoutPrefix === '/') {
+      return '/'
     }
 
-    // Dla innych języków – dodaj prefiks
+    // 3. Dla każdego innego przypadku dodajemy prefiks (np. /pl/kontakt, /en/about)
     return `/${locale}${pathWithoutPrefix === '/' ? '' : pathWithoutPrefix}`
   }
 
@@ -137,28 +137,39 @@ const store = useAppStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 
-// 🔹 czekamy, aż store zostanie zainicjalizowany
+// Inicjalizacja store
 if (!store.initialized) await store.init()
-if (!store.currentLang) store.setCurrentLang(store.defaultLang || 'en') // zabezpieczenie
+if (!store.currentLang) await store.setCurrentLang(store.defaultLang || 'en')
 
-// 🔹 bierzemy ścieżkę i normalizujemy
+// Pobierz bieżącą ścieżkę
 const currentUrl = route.path
 
+// Znajdź pageId na podstawie menu
 const pageId = findPageIdByUrl(store.menus, currentUrl)
 
-if (!pageId) {
+// Sprawdź, czy to strona główna (po normalizacji daje '/')
+//const isHome = !pageId && currentUrl.replace(/^\/[a-z]{2}(\/|$)/, '/') === '/'
+const isHome = currentUrl === '/' || 
+               currentUrl === '/en' || 
+               currentUrl === '/pl' || 
+               currentUrl === '/en/' || 
+               currentUrl === '/pl/'
+
+
+if (!isHome && !pageId) {
   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
   throw createError({ statusCode: 404 })
 }
 
-// 🔹 pobieramy stronę po page_id
-//const pageResponse: any = await $fetch(`${config.public.apiBase}/page-id/${pageId}/${store.defaultLang}`)
-const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
+let page = null
+if (!isHome) {
+  // Pobierz dane strony
+  const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
+  if (!pageResponse?.data) throw createError({ statusCode: 404 })
+  page = pageResponse.data
+}
 
-if (!pageResponse?.data) throw createError({ statusCode: 404 })
-
-const page = pageResponse.data
-
+// Dane formularza kontaktowego (tylko dla stron kontaktowych)
 const email = ref('')
 const message = ref('')
 const emailErr = ref('')
@@ -183,139 +194,99 @@ const contact = async (event: Event) => {
   try {
     await $fetch(`${config.public.domain}/api/contact/${store.defaultLang}`, {
       method: 'POST',
-      body: { email: email.value, message: message.value, pageId: page.id }
+      body: { email: email.value, message: message.value, pageId: page!.id }
     })
     messageInfo.value = 'Message sent successfully'
     email.value = ''
     message.value = ''
   } catch (error) {
-    messageInfo.value = "We're sorry, but this action is not available in the demo version." //'Error sending message'
+    messageInfo.value = "We're sorry, but this action is not available in the demo version."
   }
 }
 </script>
+
 <template>
   <div>
-    <h1 class="mb-3">{{ page.title }}</h1>
-    <div v-if="page.type === 'contact'">
-      <form @submit="contact">
-        <div class="mb-4">
-          <input
-        v-model="email"
-        type="email"
-        placeholder="Your email"
-        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <span v-if="emailErr" class="text-red-500 text-sm">{{ emailErr }}</span>
-        </div>
-        <div class="mb-6">
-          <textarea
-        v-model="message"
-        placeholder="Your message"
-        rows="8"
-        class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          ></textarea>
-          <span v-if="messageErr" class="text-red-500 text-sm">{{ messageErr }}</span>
-        </div>
-        <button type="submit" class="btn btn-secondary">
-          Send
-        </button>
-        <div v-if="messageInfo" class="mt-3 text-green-500">{{ messageInfo }}</div>
-      </form>
-    </div>
-    <div v-else-if="page.type === 'shop'">
-    <div class="row">
-      <div v-for="(product, index) in page.products" :key="product.id" class="col-md-6 mb-5">
+    <!-- Strona główna (dla /pl, /en jeśli brak prefiksu itp.) -->
+    <HomePage v-if="isHome" />
+
+    <!-- Zwykłe strony -->
+    <div v-else>
+      <h1 class="mb-3">{{ page.title }}</h1>
+
+      <!-- Strona kontaktowa -->
+      <div v-if="page.type === 'contact'">
+        <form @submit="contact">
+          <div class="mb-4">
+            <input
+              v-model="email"
+              type="email"
+              placeholder="Your email"
+              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span v-if="emailErr" class="text-red-500 text-sm">{{ emailErr }}</span>
+          </div>
+          <div class="mb-6">
+            <textarea
+              v-model="message"
+              placeholder="Your message"
+              rows="8"
+              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            ></textarea>
+            <span v-if="messageErr" class="text-red-500 text-sm">{{ messageErr }}</span>
+          </div>
+          <button type="submit" class="btn btn-secondary">
+            Send
+          </button>
+          <div v-if="messageInfo" class="mt-3 text-green-500">{{ messageInfo }}</div>
+        </form>
+      </div>
+
+      <!-- Strona sklepu -->
+      <div v-else-if="page.type === 'shop'">
         <div class="row">
-          <div class="col">
-            <a v-if="product.images?.length" :href="`/${store.defaultLang}${product.url}`">
-              <img 
-                class="m-3" 
-                :src="`${config.public.domain}${product.images[0].fs.medium}`"
-                :alt="product.images[0].alt || product.product_name"
-              />
-            </a>
-            <ul class="ms-3 list-unstyled">
-              <li class="product-test">{{ product.product_name }}</li>
-              <li>Nazwa: <a :href="`/${store.defaultLang}${product.url}`">{{ product.product_name }}</a></li>
-              <li v-if="product.sku">Sku: {{ product.sku }}</li>
-              <li>Cena: {{ product.price_description }}</li>
-              <li v-if="product.product_description">{{ product.product_description }}</li>
-            </ul>
-            <!-- to do -->
-            <!--            
-            <button 
-              @click="addToCart({ id: product.id, name: product.product_name, price: product.price })" 
-              class="add-to-cart btn"
-            >
-              Dodaj do koszyka
-            </button>
-            -->
+          <div v-for="product in page.products" :key="product.id" class="col-md-6 mb-5">
+            <div class="row">
+              <div class="col">
+                <a v-if="product.images?.length" :href="`/${store.defaultLang}${product.url}`">
+                  <img 
+                    class="m-3" 
+                    :src="`${config.public.domain}${product.images[0].fs.medium}`"
+                    :alt="product.images[0].alt || product.product_name"
+                  />
+                </a>
+                <ul class="ms-3 list-unstyled">
+                  <li class="product-test">{{ product.product_name }}</li>
+                  <li>Nazwa: <a :href="`/${store.defaultLang}${product.url}`">{{ product.product_name }}</a></li>
+                  <li v-if="product.sku">Sku: {{ product.sku }}</li>
+                  <li>Cena: {{ product.price_description }}</li>
+                  <li v-if="product.product_description">{{ product.product_description }}</li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    </div>
-    <div v-else>
-      <div v-html="page.content"></div>
-      <div v-if="page.images" class="images-gallery mt-6">
-        <img
-          v-for="image in page.images"
-          :key="image.id"
-          :src="`${config.public.domain}${image.fs.medium}`"
-          :alt="(store.defaultLang && image.alt[store.defaultLang]) || image.name"
-          class="mb-4"
-        />
+      <!-- Zwykła strona z treścią i obrazkami -->
+      <div v-else>
+        <div v-html="page.content"></div>
+        <div v-if="page.images" class="images-gallery mt-6">
+          <img
+            v-for="image in page.images"
+            :key="image.id"
+            :src="`${config.public.domain}${image.fs.medium}`"
+            :alt="(store.defaultLang && image.alt[store.defaultLang]) || image.name"
+            class="mb-4"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 ===== app/pages/index.vue =====
-<script setup lang="ts">
-const store = useAppStore()
-const config = useRuntimeConfig()
-
-// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
-await store.init()
-if (!store.currentLang) {
-  await store.setCurrentLang(store.defaultLang || 'en')
-}
-
-// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
-const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
-  `${config.public.apiBase}/pages-type/inner`
-)
-
-// Reaktywne obliczenia na podstawie danych
-const inner = computed(() => response.value?.data || [])
-
-// Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
-const slider = computed(() =>
-  inner.value.find(i => i.short_title?.[store.defaultLang!] === 'main_page_slider')
-)
-
-const boxes = computed(() =>
-  inner.value.filter(i => i.short_title?.[store.defaultLang!]?.includes('main_page_box'))
-)
-
-</script>
-
 <template>
-  <div>
-    <Slider
-      v-if="slider"
-      :images="slider.images || []"
-      :lang="store.currentLang || store.defaultLang || 'en'"
-      :domain="config.public.apiBase.replace('/api/headless', '')"
-    />
-
-    <div class="row mt-4">
-      <div v-for="box in boxes" :key="box.id" class="col-md-4">
-        <!-- Treść z aktualnego języka -->
-        <div class="card p-3 mb-3" v-html="box.content?.[store.currentLang!]"></div>
-      </div>
-    </div>
-  </div>
+  <HomePage />
 </template>
 ===== app/components/Slider.vue =====
 <script setup lang="ts">
@@ -377,28 +348,74 @@ const modules = [Pagination]
     </SwiperSlide>
   </Swiper>
 </template>
+===== app/components/HomePage.vue =====
+<script setup lang="ts">
+const store = useAppStore()
+const config = useRuntimeConfig()
+
+// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
+await store.init()
+if (!store.currentLang) {
+  await store.setCurrentLang(store.defaultLang || 'en')
+}
+
+// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
+const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
+  `${config.public.apiBase}/pages-type/inner`
+)
+
+// Reaktywne obliczenia na podstawie danych
+const inner = computed(() => response.value?.data || [])
+
+// Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
+const slider = computed(() =>
+  inner.value.find(i => i.short_title?.[store.defaultLang!] === 'main_page_slider')
+)
+
+const boxes = computed(() =>
+  inner.value.filter(i => i.short_title?.[store.defaultLang!]?.includes('main_page_box'))
+)
+</script>
+
+<template>
+  <div>
+    <Slider
+      v-if="slider"
+      :images="slider.images || []"
+      :lang="store.currentLang || store.defaultLang || 'en'"
+      :domain="config.public.apiBase.replace('/api/headless', '')"
+    />
+
+    <div class="row mt-4">
+      <div v-for="box in boxes" :key="box.id" class="col-md-4">
+        <!-- Treść z aktualnego języka -->
+        <div class="card p-3 mb-3" v-html="box.content?.[store.currentLang!]"></div>
+      </div>
+    </div>
+  </div>
+</template>
 ===== app/middleware/i18n.global.ts =====
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const store = useAppStore()
   await store.init()
 
   const path = to.path
-  const supportedLocales = ['en', 'pl']
   const segments = path.split('/').filter(Boolean)
+  const firstSegment = segments[0]
 
-  // Sprawdź, czy pierwszy segment to dwuliterowy kod języka
-  if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '')) {
-    const lang = segments[0] || 'en'
-    if (supportedLocales.includes(lang)) {
-      await store.setCurrentLang(lang)
-    } else {
-      // Nieobsługiwany kod języka – przekieruj na ścieżkę bez prefiksu
-      const newPath = '/' + segments.slice(1).join('/')
-      return navigateTo(newPath || '/', { redirectCode: 301 })
-    }
+  // 1. Jeśli URL to po prostu "/" (brak segmentów) -> ustaw EN
+  if (segments.length === 0) {
+    await store.setCurrentLang('en')
+    return
+  }
+
+  // 2. Jeśli pierwszy segment to pl lub en -> ustaw odpowiedni język
+  if (firstSegment === 'pl' || firstSegment === 'en') {
+    await store.setCurrentLang(firstSegment)
   } else {
-    // Brak prefiksu językowego – ustaw domyślny
-    await store.setCurrentLang(store.defaultLang!)
+    // 3. Jeśli brak prefiksu pl/en, a to nie jest "/" 
+    // to domyślnie przyjmujemy angielski (możesz tu też zrobić przekierowanie)
+    await store.setCurrentLang('en')
   }
 })
 ===== app/app.vue =====
@@ -416,15 +433,22 @@ const { switchLocalePath } = useLocale()
 
 const localizedUrl = (url?: string) => {
   if (!url) return '/'
-  // Usuń domenę (jeśli jest)
-  url = url.replace(/^https?:\/\/[^/]+/, '')
-  // Usuń istniejący prefiks językowy (jeśli jest)
-  const withoutLang = url.replace(/^\/[a-z]{2}\//, '/')
-  // Dodaj aktualny język (jeśli nie domyślny)
-  if (store.currentLang === store.defaultLang) {
-    return withoutLang || '/'
+  
+  // Usuń domenę i wyczyść URL
+  let cleanUrl = url.replace(/^https?:\/\/[^/]+/, '')
+  // Usuń stary prefiks jeśli istnieje
+  cleanUrl = cleanUrl.replace(/^\/(pl|en)(\/|$)/, '/')
+
+  const lang = store.currentLang
+
+  // Jeśli jesteśmy na EN i link prowadzi do strony głównej -> zwróć "/"
+  if (lang === 'en' && (cleanUrl === '/' || cleanUrl === '')) {
+    return '/'
   }
-  return `/${store.currentLang}${withoutLang === '/' ? '' : withoutLang}`
+
+  // W przeciwnym razie dodaj aktualny prefiks języka ( /pl/strona lub /en/strona )
+  const separator = cleanUrl.startsWith('/') ? '' : '/'
+  return `/${lang}${separator}${cleanUrl}`.replace(/\/$/, '') || '/'
 }
 </script>
 

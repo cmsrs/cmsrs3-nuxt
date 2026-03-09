@@ -6,19 +6,19 @@ export const useLocale = () => {
     const currentPath = route.path
     const segments = currentPath.split('/').filter(Boolean)
 
-    // Usuń istniejący prefiks językowy (jeśli jest)
-    if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '/')) {
+    // 1. Usuń istniejący prefiks (pl lub en)
+    if (segments.length > 0 && /^(pl|en)$/.test(segments[0])) {
       segments.shift()
     }
 
     const pathWithoutPrefix = '/' + segments.join('/')
 
-    // Dla języka domyślnego – brak prefiksu
-    if (locale === store.defaultLang) {
-      return pathWithoutPrefix === '' ? '/' : pathWithoutPrefix
+    // 2. Specjalny przypadek: Strona główna w języku angielskim ma być czystym "/"
+    if (locale === 'en' && pathWithoutPrefix === '/') {
+      return '/'
     }
 
-    // Dla innych języków – dodaj prefiks
+    // 3. Dla każdego innego przypadku dodajemy prefiks (np. /pl/kontakt, /en/about)
     return `/${locale}${pathWithoutPrefix === '/' ? '' : pathWithoutPrefix}`
   }
 

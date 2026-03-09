@@ -3,21 +3,21 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
   await store.init()
 
   const path = to.path
-  const supportedLocales = ['en', 'pl']
   const segments = path.split('/').filter(Boolean)
+  const firstSegment = segments[0]
 
-  // Sprawdź, czy pierwszy segment to dwuliterowy kod języka
-  if (segments.length > 0 && /^[a-z]{2}$/.test(segments[0] || '')) {
-    const lang = segments[0] || 'en'
-    if (supportedLocales.includes(lang)) {
-      await store.setCurrentLang(lang)
-    } else {
-      // Nieobsługiwany kod języka – przekieruj na ścieżkę bez prefiksu
-      const newPath = '/' + segments.slice(1).join('/')
-      return navigateTo(newPath || '/', { redirectCode: 301 })
-    }
+  // 1. Jeśli URL to po prostu "/" (brak segmentów) -> ustaw EN
+  if (segments.length === 0) {
+    await store.setCurrentLang('en')
+    return
+  }
+
+  // 2. Jeśli pierwszy segment to pl lub en -> ustaw odpowiedni język
+  if (firstSegment === 'pl' || firstSegment === 'en') {
+    await store.setCurrentLang(firstSegment)
   } else {
-    // Brak prefiksu językowego – ustaw domyślny
-    await store.setCurrentLang(store.defaultLang!)
+    // 3. Jeśli brak prefiksu pl/en, a to nie jest "/" 
+    // to domyślnie przyjmujemy angielski (możesz tu też zrobić przekierowanie)
+    await store.setCurrentLang('en')
   }
 })

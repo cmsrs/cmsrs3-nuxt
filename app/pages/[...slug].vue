@@ -16,7 +16,13 @@ const currentUrl = route.path
 const pageId = findPageIdByUrl(store.menus, currentUrl)
 
 // Sprawdź, czy to strona główna (po normalizacji daje '/')
-const isHome = !pageId && currentUrl.replace(/^\/[a-z]{2}(\/|$)/, '/') === '/'
+//const isHome = !pageId && currentUrl.replace(/^\/[a-z]{2}(\/|$)/, '/') === '/'
+const isHome = currentUrl === '/' || 
+               currentUrl === '/en' || 
+               currentUrl === '/pl' || 
+               currentUrl === '/en/' || 
+               currentUrl === '/pl/'
+
 
 if (!isHome && !pageId) {
   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
