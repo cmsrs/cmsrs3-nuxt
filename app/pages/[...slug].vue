@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { findPageIdByUrl } from '~/composables/useMenu'
 
 const store = useAppStore()
 const config = useRuntimeConfig()
@@ -18,7 +17,7 @@ await store.setCurrentLang(langFromUrl)
 const currentUrl = route.path
 
 // Znajdź pageId
-const pageId = findPageIdByUrl(store.menus, currentUrl)
+const pageId = store.urlMap[currentUrl] || null
 
 // Debugowanie (usuń po rozwiązaniu problemu)
 if (!pageId && currentUrl !== '/' ) {

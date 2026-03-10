@@ -3,25 +3,7 @@ const store = useAppStore()
 await store.init()
 const { switchLocalePath } = useLocale()
 
-const localizedUrl = (url?: string) => {
-  if (!url) return '/'
-  
-  // Usuń domenę i wyczyść URL
-  let cleanUrl = url.replace(/^https?:\/\/[^/]+/, '')
-  // Usuń stary prefiks jeśli istnieje
-  cleanUrl = cleanUrl.replace(/^\/(pl|en)(\/|$)/, '/')
-
-  const lang = store.currentLang
-
-  // Jeśli jesteśmy na EN i link prowadzi do strony głównej -> zwróć "/"
-  if (lang === 'en' && (cleanUrl === '/' || cleanUrl === '')) {
-    return '/'
-  }
-
-  // W przeciwnym razie dodaj aktualny prefiks języka ( /pl/strona lub /en/strona )
-  const separator = cleanUrl.startsWith('/') ? '' : '/'
-  return `/${lang}${separator}${cleanUrl}`.replace(/\/$/, '') || '/'
-}
+const lang = computed(() => store.currentLang || store.defaultLang || 'en')
 </script>
 
 <style scoped>
@@ -58,7 +40,7 @@ const localizedUrl = (url?: string) => {
           <NuxtLink
             v-if="menu.pages?.length === 0"
             class="nav-link"
-            :to="localizedUrl(menu.url)"
+            :to="menu.url?.[lang]"
           >
             {{ menu.menu_name }}
           </NuxtLink>
@@ -77,7 +59,7 @@ const localizedUrl = (url?: string) => {
               <li v-for="page in menu.pages" :key="page.page_id">
                 <NuxtLink
                   class="dropdown-item"
-                  :to="localizedUrl(page.url)"
+                  :to="page.url?.[lang]"
                 >
                   {{ page.short_title }}
                 </NuxtLink>
@@ -86,7 +68,7 @@ const localizedUrl = (url?: string) => {
                   v-for="child in page.children"
                   :key="child.page_id"
                   class="dropdown-item ms-3"
-                  :to="localizedUrl(child.url)"
+                  :to="child.url?.[lang]"
                 >
                   {{ child.short_title }}
                 </NuxtLink>
