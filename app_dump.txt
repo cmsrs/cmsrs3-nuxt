@@ -887,56 +887,55 @@ export default defineNuxtConfig({
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39mPlugin: initialising store...
 
+[90mstdout[2m | tests/nuxt/index.test.ts
+[22m[39mPlugin: store initialised
+
 [90mstdout[2m | tests/nuxt/slug.spec.ts
 [22m[39mPlugin: initialising store...
 
 [90mstdout[2m | tests/nuxt/slug.spec.ts
 [22m[39mPlugin: store initialised
-
-[90mstdout[2m | tests/nuxt/index.test.ts
-[22m[39mPlugin: store initialised
-
-[90mstdout[2m | tests/nuxt/index.test.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
 
 [90mstdout[2m | tests/nuxt/slug.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/layout.spec.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/layout.spec.ts
-[22m[39mPlugin: store initialised
-
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39mPlugin: store initialised
+[90mstdout[2m | tests/nuxt/index.test.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
 
 [90mstdout[2m | tests/nuxt/slug.spec.ts[2m > [22m[2mSlug page[2m > [22m[2mrenders the correct page for /en/cms/about/about-me
 [22m[39mjestem!!!!!!!!!!!!
 
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39mPlugin: initialising store...
+
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39mPlugin: store initialised
+
+[90mstdout[2m | tests/nuxt/layout.spec.ts
+[22m[39mPlugin: initialising store...
+
+[90mstdout[2m | tests/nuxt/layout.spec.ts
+[22m[39mPlugin: store initialised
+
+[90mstdout[2m | tests/nuxt/slug.spec.ts[2m > [22m[2mSlug page[2m > [22m[2mrenders the correct page for /pl/cms/o-mnie/o-mnie
+[22m[39mjestem!!!!!!!!!!!!
+
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+ [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 355[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
 [22m[39m0000000000000000111
 
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
-
- [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 360[2mms[22m[39m
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 275[2mms[22m[39m
-[90mstdout[2m | tests/nuxt/slug.spec.ts[2m > [22m[2mSlug page[2m > [22m[2mrenders the correct page for /pl/cms/o-mnie/o-mnie
-[22m[39mjestem!!!!!!!!!!!!
-
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 213[2mms[22m[39m
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 542[2mms[22m[39m
-     [33m[2m✓[22m[39m renders without crashing [33m 368[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 175[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 281[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 288[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 19:51:27
-[2m   Duration [22m 1.39s[2m (transform 1.29s, setup 339ms, import 1.25s, tests 1.39s, environment 1.06s)[22m
+[2m   Start at [22m 19:58:35
+[2m   Duration [22m 1.18s[2m (transform 1.39s, setup 307ms, import 1.42s, tests 1.10s, environment 1.05s)[22m
 
