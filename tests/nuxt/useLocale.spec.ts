@@ -32,7 +32,7 @@ describe('useLocale', () => {
   })
 
   it('switchLocalePath returns / for English home', () => {
-    mockRoutePath = '/en'
+    mockRoutePath = '/'
     const { switchLocalePath } = useLocale()
     expect(switchLocalePath('en')).toBe('/')
   })

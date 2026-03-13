@@ -8,6 +8,7 @@ export const useAppStore = defineStore('app', {
     currentLang: null as string | null,
     langs: [] as string[],
     urlMap: {} as Record<string, number>,   // mapa url -> page_id
+    pageUrls: {} as Record<number, Record<string, string>>,
   }),
 
   actions: {
@@ -64,40 +65,45 @@ export const useAppStore = defineStore('app', {
       }
     },
     
-    buildUrlMap() {
-      const map: Record<string, number> = {}
+  buildUrlMap() {
+      const urlMap: Record<string, number> = {}
+      const pageUrls: Record<number, Record<string, string>> = {}
 
       for (const menu of this.menus) {
-
-        // menu typu kontakt
+        // Pojedyncze strony (np. kontakt)
         if (menu.url) {
-          Object.values(menu.url).forEach((url: any) => {
-            map[url] = menu.page_id
+          pageUrls[menu.page_id] = menu.url
+          Object.entries(menu.url).forEach(([lang, url]) => {
+            urlMap[url as string] = menu.page_id
           })
         }
 
         if (!menu.pages) continue
 
         for (const page of menu.pages) {
-
           if (page.url) {
-            Object.values(page.url).forEach((url: any) => {
-              map[url] = page.page_id
+            pageUrls[page.page_id] = page.url
+            Object.entries(page.url).forEach(([lang, url]) => {
+              urlMap[url as string] = page.page_id
             })
           }
 
           if (!page.children) continue
 
           for (const child of page.children) {
-            Object.values(child.url).forEach((url: any) => {
-              map[url] = child.page_id
-            })
+            if (child.url) {
+              pageUrls[child.page_id] = child.url
+              Object.entries(child.url).forEach(([lang, url]) => {
+                urlMap[url as string] = child.page_id
+              })
+            }
           }
-
         }
       }
 
-      this.urlMap = map
+      this.urlMap = urlMap
+      this.pageUrls = pageUrls
     },
+
   },
 })

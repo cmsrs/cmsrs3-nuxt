@@ -633,7 +633,7 @@ describe('useLocale', () => {
   })
 
   it('switchLocalePath returns / for English home', () => {
-    mockRoutePath = '/en'
+    mockRoutePath = '/'
     const { switchLocalePath } = useLocale()
     expect(switchLocalePath('en')).toBe('/')
   })
@@ -667,7 +667,7 @@ describe('default layout', () => {
       slots: { default: () => '<div>Page content</div>' }
     })
 
-    const enLink = wrapper.find('a[href="/"]')
+    const enLink = wrapper.find('a[href="/en"]')
     const plLink = wrapper.find('a[href="/pl"]')
     expect(enLink.exists()).toBe(true)
     expect(plLink.exists()).toBe(true)
@@ -871,20 +871,6 @@ export default defineNuxtConfig({
   }
 })
 === GIT DIFF (ostatnie zmiany) ===
-diff --git a/app/pages/[...slug].vue b/app/pages/[...slug].vue
-index 892bcba..5b7f57e 100644
---- a/app/pages/[...slug].vue
-+++ b/app/pages/[...slug].vue
-@@ -17,7 +17,8 @@ console.log('jestem!!!!!!!!!!!!');
- const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
- 
- // Znajdź pageId
--const pageId = store.urlMap[currentUrl] || null
-+const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
-+const pageId = store.urlMap[normalisedUrl] || null
- 
- 
- if (!isHome && !pageId) {
 
 > test:run
 > vitest run
@@ -892,27 +878,21 @@ index 892bcba..5b7f57e 100644
 
 [1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/home/rob/js/cmsrs3-nuxt[39m
 
+[90mstdout[2m | tests/nuxt/slug.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39mPlugin: initialising store...
 
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39mPlugin: store initialised
 
-[90mstdout[2m | tests/nuxt/slug.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
-
- [31m❯[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[32m 148[2mms[22m[39m
+ [31m❯[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[32m 147[2mms[22m[39m
      [2m[90m↓[39m[22m renders the correct page for /en/cms/about/about-me
      [2m[90m↓[39m[22m renders the correct page for /pl/cms/o-mnie/o-mnie
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39mPlugin: store initialised
-
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39mPlugin: initialising store...
 
@@ -920,26 +900,33 @@ index 892bcba..5b7f57e 100644
 [22m[39mPlugin: store initialised
 
 [90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
+[22m[39mPlugin: initialising store...
+
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39mPlugin: store initialised
 
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [31m❯[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 376[2mms[22m[39m
-[31m     [31m×[31m switchLocalePath returns correct Polish path[39m[32m 4[2mms[22m[39m
-     [32m✓[39m switchLocalePath returns / for English home[32m 0[2mms[22m[39m
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
 [90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
 [22m[39m0000000000000000111
 
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 263[2mms[22m[39m
+ [31m❯[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 368[2mms[22m[39m
+[31m     [31m×[31m switchLocalePath returns correct Polish path[39m[32m 4[2mms[22m[39m
+     [32m✓[39m switchLocalePath returns / for English home[32m 0[2mms[22m[39m
+ [31m❯[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 261[2mms[22m[39m
+[31m     [31m×[31m renders language switcher with correct links[39m[32m 16[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
 [22m[39mIndexPage rendered successfully
 
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 566[2mms[22m[39m
-     [33m[2m✓[22m[39m renders without crashing [33m 413[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 537[2mms[22m[39m
+     [33m[2m✓[22m[39m renders without crashing [33m 382[2mms[22m[39m
 
-[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (4)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (6)[39m
-[2m   Start at [22m 13:37:13
-[2m   Duration [22m 1.39s[2m (transform 1.15s, setup 364ms, import 1.22s, tests 1.35s, environment 1000ms)[22m
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m1 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (6)[39m
+[2m   Start at [22m 18:19:49
+[2m   Duration [22m 1.40s[2m (transform 1.39s, setup 308ms, import 1.36s, tests 1.31s, environment 1.01s)[22m
 
