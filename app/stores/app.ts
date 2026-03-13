@@ -6,42 +6,63 @@ export const useAppStore = defineStore('app', {
     initialized: false,
     menus: [] as any[],
     currentLang: null as string | null,
-    urlMap: {} as Record<string, number>,   // 🔥 mapa url -> page_id
+    langs: [] as string[],
+    urlMap: {} as Record<string, number>,   // mapa url -> page_id
   }),
 
   actions: {
     async init() {
+      
       if (this.initialized) return
 
       const config = useRuntimeConfig()
       const cfgData: any = await $fetch(`${config.public.apiBase}/config`)
 
+      
+      if (!cfgData?.success) {
+        console.warn('Failed to fetch config:', cfgData)      
+        throw createError({ statusCode: 500, message: 'Failed to fetch config' })
+      }
+
       if (cfgData?.success) {
         this.defaultLang = cfgData.data.default_lang
+        if (!this.defaultLang){
+          console.warn('default_lang must be defined in config')
+          throw createError({ statusCode: 500, message: 'default_lang must be defined' })
+        }
+        this.langs = cfgData.data.langs
+        if (!this.langs){
+          console.warn('langs must be defined in config')
+          throw createError({ statusCode: 500, message: 'langs must be defined' })
+        }
       }
+      
+      await this.fetchMenus(config)
+      console.log('koniec init')
 
       this.initialized = true
     },
 
     async setCurrentLang(lang: string) {
-      if (this.currentLang === lang && this.menus.length) return
+      if (this.currentLang === lang ) return
 
       this.currentLang = lang
-      await this.fetchMenus()
     },
 
-    async fetchMenus() {
-      const config = useRuntimeConfig()
-
-      // 🔥 NOWE API (bez lang)
+    // app/stores/app.ts
+    async fetchMenus(config: ReturnType<typeof useRuntimeConfig>) {
+      // NOWE API (bez lang)
       const menuData: any = await $fetch(`${config.public.apiBase}/menus`)
+      if (!menuData?.success) {
+        console.warn('Failed to fetch menus:', menuData)      
+        throw createError({ statusCode: 500, message: 'Failed to fetch menus' })
+      }
 
       if (menuData?.success) {
         this.menus = menuData.data
         this.buildUrlMap()
       }
     },
-
     
     buildUrlMap() {
       const map: Record<string, number> = {}

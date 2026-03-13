@@ -4,27 +4,28 @@ const store = useAppStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 
-// Inicjalizacja store
-if (!store.initialized) await store.init()
-
 // Pobierz język z URL
-const segments = route.path.split('/').filter(Boolean)
+const currentUrl = route.path
+const segments = currentUrl.split('/').filter(Boolean)
 const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
 
 // WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
 await store.setCurrentLang(langFromUrl)
 
-const currentUrl = route.path
+console.log('jestem!!!!!!!!!!!!');
+// 5. Sprawdź, czy to strona główna
+const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
 
 // Znajdź pageId
 const pageId = store.urlMap[currentUrl] || null
 
 // Debugowanie (usuń po rozwiązaniu problemu)
-if (!pageId && currentUrl !== '/' ) {
-  console.log('DEBUG: Szukam URL:', currentUrl, 'znormalizowany:', currentUrl.replace(/^\/(pl|en)(\/|$)/, '/').replace(/^\/cms(\/|$)/, '/'))
-}
-// 5. Sprawdź, czy to strona główna
-const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+//if (!pageId && currentUrl !== '/' ) {
+//  console.warn('DEBUG: Szukam URL:', currentUrl, store.urlMap)
+//  throw createError({ statusCode: 500, message: 'Page not found' })
+//}
+
+
 
 if (!isHome && !pageId) {
   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)

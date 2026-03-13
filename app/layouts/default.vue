@@ -1,6 +1,5 @@
 <script setup lang="ts">
 const store = useAppStore()
-await store.init()
 const { switchLocalePath } = useLocale()
 
 const lang = computed(() => store.currentLang || store.defaultLang || 'en')

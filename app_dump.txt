@@ -5,8 +5,7 @@ app
 │   └── Slider.vue
 ├── composables
 │   ├── useApi.ts
-│   ├── useLocale.ts
-│   └── useMenu.ts
+│   └── useLocale.ts
 ├── layouts
 │   └── default.vue
 ├── middleware
@@ -14,10 +13,15 @@ app
 ├── pages
 │   ├── index.vue
 │   └── [...slug].vue
+├── plugins
+│   └── init-store.ts
 └── stores
     └── app.ts
 
-7 directories, 11 files
+8 directories, 11 files
+=== APP ===
+
+=== FILE CONTENTS ===
 ===== app/composables/useApi.ts =====
 interface ApiResponse<T> {
   success: boolean
@@ -38,42 +42,6 @@ export const useApi = () => {
   }
 
   return { fetchApi }
-}
-===== app/composables/useMenu.ts =====
-export const findPageIdByUrl = (menus: any[], currentUrl: string): number | null => {
-  const normalize = (url: string) => {
-    // 1. Zamień na małe litery
-    // 2. Usuń prefiks języka /pl/ lub /en/
-    // 3. Usuń prefiks /cms/ jeśli występuje
-    // 4. Usuń końcowy ukośnik dla spójności
-    return url
-      .toLowerCase()
-      .replace(/^\/(pl|en)(\/|$)/, '/')
-      .replace(/^\/cms(\/|$)/, '/')
-      .replace(/\/$/, '') || '/'
-  }
-
-  const cleanUrl = normalize(currentUrl)
-
-  // Rekurencyjna funkcja przeszukująca menu
-  const searchInMenu = (items: any[]): number | null => {
-    for (const item of items) {
-      if (item.url && normalize(item.url) === cleanUrl) return item.page_id
-      
-      if (item.pages && item.pages.length > 0) {
-        const found = searchInMenu(item.pages)
-        if (found) return found
-      }
-      
-      if (item.children && item.children.length > 0) {
-         const found = searchInMenu(item.children)
-         if (found) return found
-      }
-    }
-    return null
-  }
-
-  return searchInMenu(menus)
 }
 ===== app/composables/useLocale.ts =====
 export const useLocale = () => {
@@ -102,6 +70,16 @@ export const useLocale = () => {
 
   return { switchLocalePath }
 }
+===== app/plugins/init-store.ts =====
+// app/plugins/init-store.ts
+import { defineNuxtPlugin } from '#app'
+
+export default defineNuxtPlugin(async () => {
+  const store = useAppStore()
+  console.log('Plugin: initialising store...')
+  await store.init()
+  console.log('Plugin: store initialised')
+})
 ===== app/stores/app.ts =====
 import { defineStore } from 'pinia'
 
@@ -109,70 +87,135 @@ export const useAppStore = defineStore('app', {
   state: () => ({
     defaultLang: null as string | null,
     initialized: false,
-    menus: [] as any[],          // menu dla aktualnego języka
+    menus: [] as any[],
     currentLang: null as string | null,
+    langs: [] as string[],
+    urlMap: {} as Record<string, number>,   // mapa url -> page_id
   }),
 
   actions: {
     async init() {
+      
       if (this.initialized) return
 
       const config = useRuntimeConfig()
       const cfgData: any = await $fetch(`${config.public.apiBase}/config`)
 
+      
+      if (!cfgData?.success) {
+        console.warn('Failed to fetch config:', cfgData)      
+        throw createError({ statusCode: 500, message: 'Failed to fetch config' })
+      }
+
       if (cfgData?.success) {
         this.defaultLang = cfgData.data.default_lang
+        if (!this.defaultLang){
+          console.warn('default_lang must be defined in config')
+          throw createError({ statusCode: 500, message: 'default_lang must be defined' })
+        }
+        this.langs = cfgData.data.langs
+        if (!this.langs){
+          console.warn('langs must be defined in config')
+          throw createError({ statusCode: 500, message: 'langs must be defined' })
+        }
       }
+      
+      await this.fetchMenus()
+      console.log('koniec init')
 
       this.initialized = true
     },
 
     async setCurrentLang(lang: string) {
-      if (this.currentLang === lang && this.menus.length) return
+      if (this.currentLang === lang ) return
 
       this.currentLang = lang
-      await this.fetchMenus(lang)
     },
 
-    async fetchMenus(lang: string) {
+    async fetchMenus() {
       const config = useRuntimeConfig()
-      const menuData: any = await $fetch(`${config.public.apiBase}/menus/${lang}`)
+
+      // NOWE API (bez lang)
+      const menuData: any = await $fetch(`${config.public.apiBase}/menus`)
+      if (!menuData?.success) {
+        console.warn('Failed to fetch menus:', menuData)      
+        throw createError({ statusCode: 500, message: 'Failed to fetch menus' })
+      }
 
       if (menuData?.success) {
         this.menus = menuData.data
+        this.buildUrlMap()
       }
+      //console.log('++++00000')
+    },
+
+    
+    buildUrlMap() {
+      const map: Record<string, number> = {}
+
+      for (const menu of this.menus) {
+
+        // menu typu kontakt
+        if (menu.url) {
+          Object.values(menu.url).forEach((url: any) => {
+            map[url] = menu.page_id
+          })
+        }
+
+        if (!menu.pages) continue
+
+        for (const page of menu.pages) {
+
+          if (page.url) {
+            Object.values(page.url).forEach((url: any) => {
+              map[url] = page.page_id
+            })
+          }
+
+          if (!page.children) continue
+
+          for (const child of page.children) {
+            Object.values(child.url).forEach((url: any) => {
+              map[url] = child.page_id
+            })
+          }
+
+        }
+      }
+
+      this.urlMap = map
     },
   },
 })
 ===== app/pages/[...slug].vue =====
 <script setup lang="ts">
-import { findPageIdByUrl } from '~/composables/useMenu'
 
 const store = useAppStore()
 const config = useRuntimeConfig()
 const route = useRoute()
 
-// Inicjalizacja store
-if (!store.initialized) await store.init()
-
 // Pobierz język z URL
-const segments = route.path.split('/').filter(Boolean)
+const currentUrl = route.path
+const segments = currentUrl.split('/').filter(Boolean)
 const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
 
 // WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
 await store.setCurrentLang(langFromUrl)
 
-const currentUrl = route.path
-
-// Znajdź pageId
-const pageId = findPageIdByUrl(store.menus, currentUrl)
-
-// Debugowanie (usuń po rozwiązaniu problemu)
-if (!pageId && currentUrl !== '/' ) {
-  console.log('DEBUG: Szukam URL:', currentUrl, 'znormalizowany:', currentUrl.replace(/^\/(pl|en)(\/|$)/, '/').replace(/^\/cms(\/|$)/, '/'))
-}
+console.log('jestem!!!!!!!!!!!!');
 // 5. Sprawdź, czy to strona główna
 const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+
+// Znajdź pageId
+const pageId = store.urlMap[currentUrl] || null
+
+// Debugowanie (usuń po rozwiązaniu problemu)
+//if (!pageId && currentUrl !== '/' ) {
+//  console.warn('DEBUG: Szukam URL:', currentUrl, store.urlMap)
+//  throw createError({ statusCode: 500, message: 'Page not found' })
+//}
+
+
 
 if (!isHome && !pageId) {
   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
@@ -368,11 +411,15 @@ const modules = [Pagination]
 </template>
 ===== app/components/HomePage.vue =====
 <script setup lang="ts">
+console.log('0000000000000000111')
 const store = useAppStore()
 const config = useRuntimeConfig()
 
 // Upewniamy się, że store jest zainicjowany i currentLang ustawiony
-await store.init()
+//if (!store.initialized) {
+//  await store.init()
+//}
+
 if (!store.currentLang) {
   await store.setCurrentLang(store.defaultLang || 'en')
 }
@@ -415,25 +462,22 @@ const boxes = computed(() =>
 ===== app/middleware/i18n.global.ts =====
 export default defineNuxtRouteMiddleware(async (to, from) => {
   const store = useAppStore()
-  await store.init()
+  
+  const segments = to.path.split('/').filter(Boolean)
 
-  const path = to.path
-  const segments = path.split('/').filter(Boolean)
-  const firstSegment = segments[0]
-
-  // 1. Jeśli URL to po prostu "/" (brak segmentów) -> ustaw EN
+  // Przypadek strony głównej "/"
   if (segments.length === 0) {
-    await store.setCurrentLang('en')
-    return
+    await store.setCurrentLang(store.defaultLang || 'en')
+    return // Zakończ middleware tutaj
   }
 
-  // 2. Jeśli pierwszy segment to pl lub en -> ustaw odpowiedni język
-  if (firstSegment === 'pl' || firstSegment === 'en') {
+  const firstSegment = segments[0] || store.defaultLang || 'en'
+  if (['pl', 'en'].includes(firstSegment)) {
     await store.setCurrentLang(firstSegment)
   } else {
-    // 3. Jeśli brak prefiksu pl/en, a to nie jest "/" 
-    // to domyślnie przyjmujemy angielski (możesz tu też zrobić przekierowanie)
-    await store.setCurrentLang('en')
+    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
+    // ustaw domyślny, ale nie rób nieskończonego przekierowania
+    await store.setCurrentLang(store.defaultLang || 'en')
   }
 })
 ===== app/app.vue =====
@@ -446,28 +490,9 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 ===== app/layouts/default.vue =====
 <script setup lang="ts">
 const store = useAppStore()
-await store.init()
 const { switchLocalePath } = useLocale()
 
-const localizedUrl = (url?: string) => {
-  if (!url) return '/'
-  
-  // Usuń domenę i wyczyść URL
-  let cleanUrl = url.replace(/^https?:\/\/[^/]+/, '')
-  // Usuń stary prefiks jeśli istnieje
-  cleanUrl = cleanUrl.replace(/^\/(pl|en)(\/|$)/, '/')
-
-  const lang = store.currentLang
-
-  // Jeśli jesteśmy na EN i link prowadzi do strony głównej -> zwróć "/"
-  if (lang === 'en' && (cleanUrl === '/' || cleanUrl === '')) {
-    return '/'
-  }
-
-  // W przeciwnym razie dodaj aktualny prefiks języka ( /pl/strona lub /en/strona )
-  const separator = cleanUrl.startsWith('/') ? '' : '/'
-  return `/${lang}${separator}${cleanUrl}`.replace(/\/$/, '') || '/'
-}
+const lang = computed(() => store.currentLang || store.defaultLang || 'en')
 </script>
 
 <style scoped>
@@ -504,9 +529,9 @@ const localizedUrl = (url?: string) => {
           <NuxtLink
             v-if="menu.pages?.length === 0"
             class="nav-link"
-            :to="localizedUrl(menu.url)"
+            :to="menu.url?.[lang]"
           >
-            {{ menu.menu_name }}
+            {{ menu.menu_name?.[lang] }}
           </NuxtLink>
 
           <template v-else>
@@ -516,25 +541,25 @@ const localizedUrl = (url?: string) => {
               role="button"
               data-bs-toggle="dropdown"
             >
-              {{ menu.menu_name }}
+              {{ menu.menu_name?.[lang] }}
             </a>
 
             <ul class="dropdown-menu">
               <li v-for="page in menu.pages" :key="page.page_id">
                 <NuxtLink
                   class="dropdown-item"
-                  :to="localizedUrl(page.url)"
+                  :to="page.url?.[lang]"
                 >
-                  {{ page.short_title }}
+                  {{ page.short_title?.[lang] }}
                 </NuxtLink>
 
                 <NuxtLink
                   v-for="child in page.children"
                   :key="child.page_id"
                   class="dropdown-item ms-3"
-                  :to="localizedUrl(child.url)"
+                  :to="child.url?.[lang]"
                 >
-                  {{ child.short_title }}
+                  {{ child.short_title?.[lang] }}
                 </NuxtLink>
               </li>
             </ul>
@@ -572,3 +597,269 @@ const localizedUrl = (url?: string) => {
   <slot />
 </div>
 </template>
+=== TREE TESTS ===
+tests
+└── nuxt
+    └── index.test.ts
+
+2 directories, 1 file
+=== tests ===
+===== tests/nuxt/index.test.ts =====
+import { describe, it, expect, vi } from 'vitest'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
+import IndexPage from '../../app/pages/index.vue'
+
+// 1. Mockujemy tylko store, ale w sposób, który nie psuje reszty aplikacji
+vi.mock('~/stores/app', () => ({
+  useAppStore: () => ({
+    initialized: true,
+    defaultLang: 'en',
+    currentLang: 'en',
+    menus: [],
+    urlMap: {},
+    init: vi.fn(),
+    setCurrentLang: vi.fn(),
+  })
+}))
+
+// USUNĘLIŚMY vi.mock('#app', ...) - Nuxt Test Utils zajmie się tym automatycznie
+
+describe('IndexPage', () => {
+  it('renders without crashing', async () => {
+    // mountSuspended jest kluczowe dla komponentów Nuxt 3 (obsługuje asynchroniczny setup)
+    const wrapper = await mountSuspended(IndexPage)
+    
+    expect(wrapper.exists()).toBe(true)
+    console.log('IndexPage rendered successfully')
+  })
+})
+
+=== nuxt.config.ts ===
+//import { defineNuxtConfig } from 'nuxt'
+
+const domain = 'http://demo-headless.cmsrs.pl'
+
+export default defineNuxtConfig({
+  compatibilityDate: '2026-02-24',
+  modules: ['@pinia/nuxt'],
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'swiper/vue',
+        'swiper/modules',
+      ]
+    }
+  },
+  css: [
+    'bootstrap/dist/css/bootstrap.min.css',
+    'swiper/css/pagination',
+    'swiper/css'
+  ],
+  routeRules: {
+    '/**': { prerender: true } // SSG
+  },
+  runtimeConfig: {
+    public: {
+      domain,
+      apiBase: `${domain}/api/headless`
+    }
+  },
+  app: {
+    head: {
+      script: [
+        {
+          src: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+          defer: true
+        }
+      ]
+    }
+  }
+})
+=== GIT DIFF (ostatnie zmiany) ===
+diff --git a/app/components/HomePage.vue b/app/components/HomePage.vue
+index 30e2c23..b0b3a02 100644
+--- a/app/components/HomePage.vue
++++ b/app/components/HomePage.vue
+@@ -1,9 +1,13 @@
+ <script setup lang="ts">
++console.log('0000000000000000111')
+ const store = useAppStore()
+ const config = useRuntimeConfig()
+ 
+ // Upewniamy się, że store jest zainicjowany i currentLang ustawiony
+-await store.init()
++//if (!store.initialized) {
++//  await store.init()
++//}
++
+ if (!store.currentLang) {
+   await store.setCurrentLang(store.defaultLang || 'en')
+ }
+diff --git a/app/layouts/default.vue b/app/layouts/default.vue
+index 9cdd298..9dc4747 100644
+--- a/app/layouts/default.vue
++++ b/app/layouts/default.vue
+@@ -1,6 +1,5 @@
+ <script setup lang="ts">
+ const store = useAppStore()
+-await store.init()
+ const { switchLocalePath } = useLocale()
+ 
+ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
+diff --git a/app/middleware/i18n.global.ts b/app/middleware/i18n.global.ts
+index 3b7f006..f41aa9c 100644
+--- a/app/middleware/i18n.global.ts
++++ b/app/middleware/i18n.global.ts
+@@ -1,23 +1,20 @@
+ export default defineNuxtRouteMiddleware(async (to, from) => {
+   const store = useAppStore()
+-  await store.init()
++  
++  const segments = to.path.split('/').filter(Boolean)
+ 
+-  const path = to.path
+-  const segments = path.split('/').filter(Boolean)
+-  const firstSegment = segments[0]
+-
+-  // 1. Jeśli URL to po prostu "/" (brak segmentów) -> ustaw EN
++  // Przypadek strony głównej "/"
+   if (segments.length === 0) {
+-    await store.setCurrentLang('en')
+-    return
++    await store.setCurrentLang(store.defaultLang || 'en')
++    return // Zakończ middleware tutaj
+   }
+ 
+-  // 2. Jeśli pierwszy segment to pl lub en -> ustaw odpowiedni język
+-  if (firstSegment === 'pl' || firstSegment === 'en') {
++  const firstSegment = segments[0] || store.defaultLang || 'en'
++  if (['pl', 'en'].includes(firstSegment)) {
+     await store.setCurrentLang(firstSegment)
+   } else {
+-    // 3. Jeśli brak prefiksu pl/en, a to nie jest "/" 
+-    // to domyślnie przyjmujemy angielski (możesz tu też zrobić przekierowanie)
+-    await store.setCurrentLang('en')
++    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
++    // ustaw domyślny, ale nie rób nieskończonego przekierowania
++    await store.setCurrentLang(store.defaultLang || 'en')
+   }
+ })
+\ No newline at end of file
+diff --git a/app/pages/[...slug].vue b/app/pages/[...slug].vue
+index ebe1730..8ebbed6 100644
+--- a/app/pages/[...slug].vue
++++ b/app/pages/[...slug].vue
+@@ -4,27 +4,28 @@ const store = useAppStore()
+ const config = useRuntimeConfig()
+ const route = useRoute()
+ 
+-// Inicjalizacja store
+-if (!store.initialized) await store.init()
+-
+ // Pobierz język z URL
+-const segments = route.path.split('/').filter(Boolean)
++const currentUrl = route.path
++const segments = currentUrl.split('/').filter(Boolean)
+ const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
+ 
+ // WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
+ await store.setCurrentLang(langFromUrl)
+ 
+-const currentUrl = route.path
++console.log('jestem!!!!!!!!!!!!');
++// 5. Sprawdź, czy to strona główna
++const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+ 
+ // Znajdź pageId
+ const pageId = store.urlMap[currentUrl] || null
+ 
+ // Debugowanie (usuń po rozwiązaniu problemu)
+-if (!pageId && currentUrl !== '/' ) {
+-  console.log('DEBUG: Szukam URL:', currentUrl, 'znormalizowany:', currentUrl.replace(/^\/(pl|en)(\/|$)/, '/').replace(/^\/cms(\/|$)/, '/'))
+-}
+-// 5. Sprawdź, czy to strona główna
+-const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
++//if (!pageId && currentUrl !== '/' ) {
++//  console.warn('DEBUG: Szukam URL:', currentUrl, store.urlMap)
++//  throw createError({ statusCode: 500, message: 'Page not found' })
++//}
++
++
+ 
+ if (!isHome && !pageId) {
+   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
+diff --git a/app/stores/app.ts b/app/stores/app.ts
+index a5d99e6..850674c 100644
+--- a/app/stores/app.ts
++++ b/app/stores/app.ts
+@@ -6,40 +6,64 @@ export const useAppStore = defineStore('app', {
+     initialized: false,
+     menus: [] as any[],
+     currentLang: null as string | null,
+-    urlMap: {} as Record<string, number>,   // 🔥 mapa url -> page_id
++    langs: [] as string[],
++    urlMap: {} as Record<string, number>,   // mapa url -> page_id
+   }),
+ 
+   actions: {
+     async init() {
++      
+       if (this.initialized) return
+ 
+       const config = useRuntimeConfig()
+       const cfgData: any = await $fetch(`${config.public.apiBase}/config`)
+ 
++      
++      if (!cfgData?.success) {
++        console.warn('Failed to fetch config:', cfgData)      
++        throw createError({ statusCode: 500, message: 'Failed to fetch config' })
++      }
++
+       if (cfgData?.success) {
+         this.defaultLang = cfgData.data.default_lang
++        if (!this.defaultLang){
++          console.warn('default_lang must be defined in config')
++          throw createError({ statusCode: 500, message: 'default_lang must be defined' })
++        }
++        this.langs = cfgData.data.langs
++        if (!this.langs){
++          console.warn('langs must be defined in config')
++          throw createError({ statusCode: 500, message: 'langs must be defined' })
++        }
+       }
++      
++      await this.fetchMenus()
++      console.log('koniec init')
+ 
+       this.initialized = true
+     },
+ 
+     async setCurrentLang(lang: string) {
+-      if (this.currentLang === lang && this.menus.length) return
++      if (this.currentLang === lang ) return
+ 
+       this.currentLang = lang
+-      await this.fetchMenus()
+     },
+ 
+     async fetchMenus() {
+       const config = useRuntimeConfig()
+ 
+-      // 🔥 NOWE API (bez lang)
++      // NOWE API (bez lang)
+       const menuData: any = await $fetch(`${config.public.apiBase}/menus`)
++      if (!menuData?.success) {
++        console.warn('Failed to fetch menus:', menuData)      
++        throw createError({ statusCode: 500, message: 'Failed to fetch menus' })
++      }
+ 
+       if (menuData?.success) {
+         this.menus = menuData.data
+         this.buildUrlMap()
+       }
++      //console.log('++++00000')
+     },
+ 
+     

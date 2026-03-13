@@ -1,9 +1,13 @@
 <script setup lang="ts">
+console.log('0000000000000000111')
 const store = useAppStore()
 const config = useRuntimeConfig()
 
 // Upewniamy się, że store jest zainicjowany i currentLang ustawiony
-await store.init()
+//if (!store.initialized) {
+//  await store.init()
+//}
+
 if (!store.currentLang) {
   await store.setCurrentLang(store.defaultLang || 'en')
 }

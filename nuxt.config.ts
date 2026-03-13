@@ -5,6 +5,16 @@ const domain = 'http://demo-headless.cmsrs.pl'
 export default defineNuxtConfig({
   compatibilityDate: '2026-02-24',
   modules: ['@pinia/nuxt'],
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'swiper/vue',
+        'swiper/modules',
+      ]
+    }
+  },
   css: [
     'bootstrap/dist/css/bootstrap.min.css',
     'swiper/css/pagination',
