@@ -3,6 +3,10 @@ const store = useAppStore()
 const { switchLocalePath } = useLocale()
 
 const lang = computed(() => store.currentLang || store.defaultLang || 'en')
+
+const homePath = computed(() => {
+  return lang.value === store.defaultLang ? '/' : `/${lang.value}`
+})
 </script>
 
 <style scoped>
@@ -15,7 +19,7 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
 <template>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <NuxtLink class="navbar-brand" to="/">
+    <NuxtLink class="navbar-brand" :to="homePath">
       <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" >
     </NuxtLink>
 
