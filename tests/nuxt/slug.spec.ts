@@ -1,11 +1,9 @@
 // tests/nuxt/slug.spec.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, registerEndpoint, mockNuxtImport } from '@nuxt/test-utils/runtime'
-import { useAppStore } from '~/stores/app'
 import SlugPage from '~/pages/[...slug].vue'
 
-// ----------------------------------------------------------------------
-// 1. Mock the store with realistic data
+// Mock the store with all required methods and data
 const mockStore = {
   initialized: true,
   defaultLang: 'en',
@@ -32,15 +30,16 @@ const mockStore = {
     '/pl/cms/o-mnie/o-mnie': 7
   },
   init: vi.fn(),
-  setCurrentLang: vi.fn((lang) => { mockStore.currentLang = lang })
+  setCurrentLang: vi.fn((lang) => { mockStore.currentLang = lang }),
+  fetchMenus: vi.fn(),
+  buildUrlMap: vi.fn(),
 }
 
 vi.mock('~/stores/app', () => ({
   useAppStore: () => mockStore
 }))
 
-// ----------------------------------------------------------------------
-// 2. Mock the runtime config
+// Mock runtime config
 mockNuxtImport('useRuntimeConfig', () => {
   return () => ({
     public: {
@@ -50,10 +49,24 @@ mockNuxtImport('useRuntimeConfig', () => {
   })
 })
 
-// ----------------------------------------------------------------------
-// 3. Mock API endpoints for page 7 (English)
+// Mock useRouter to provide the afterEach method required by the test utils
+mockNuxtImport('useRouter', () => {
+  return () => ({
+    afterEach: vi.fn(),
+    currentRoute: { value: { path: '/en/cms/about/about-me' } },
+    push: vi.fn(),
+    replace: vi.fn(),
+  })
+})
+
+// Mock useRoute to return the path we want (dynamic per test)
+let mockRoutePath = '/en/cms/about/about-me'
+mockNuxtImport('useRoute', () => {
+  return () => ({ path: mockRoutePath })
+})
+
+// Register API endpoints for page 7 in both languages
 registerEndpoint('/api/headless/page/7/en', {
-  method: 'GET',
   handler: () => ({
     success: true,
     data: {
@@ -66,53 +79,44 @@ registerEndpoint('/api/headless/page/7/en', {
   })
 })
 
-// ----------------------------------------------------------------------
-// 4. Mock navigateTo to capture navigation
-const navigateToMock = vi.fn()
-mockNuxtImport('navigateTo', () => navigateToMock)
+registerEndpoint('/api/headless/page/7/pl', {
+  handler: () => ({
+    success: true,
+    data: {
+      id: 7,
+      title: 'O mnie',
+      content: '<p>To jest strona o mnie.</p>',
+      type: 'cms',
+      images: []
+    }
+  })
+})
 
 describe('Slug page', () => {
   beforeEach(() => {
-    // Reset mocks before each test
     vi.clearAllMocks()
     mockStore.currentLang = 'en'
+    mockRoutePath = '/en/cms/about/about-me'
   })
 
   it('renders the correct page for /en/cms/about/about-me', async () => {
-    // Mount the page with a specific route
     const wrapper = await mountSuspended(SlugPage, {
       route: '/en/cms/about/about-me'
     })
 
-    // Check that store language was set correctly
     expect(mockStore.setCurrentLang).toHaveBeenCalledWith('en')
-
-    // Verify page content
     expect(wrapper.html()).toContain('About me')
     expect(wrapper.html()).toContain('This is the about me page')
   })
 
-  it('switches to Polish when clicking the language link', async () => {
-    // Mount the page with English route
+  it('renders the correct page for /pl/cms/o-mnie/o-mnie', async () => {
+    mockRoutePath = '/pl/cms/o-mnie/o-mnie'
     const wrapper = await mountSuspended(SlugPage, {
-      route: '/en/cms/about/about-me'
+      route: '/pl/cms/o-mnie/o-mnie'
     })
 
-    // Find the Polish language link (from layout, but we are testing the page,
-    // so we need to include layout – mountSuspended can mount with layout if we
-    // pass the page component; the layout is automatically used via app.vue.
-    // However, to access the layout, we should mount the page through app.vue?
-    // Simpler: we can test the language switch by directly calling the composable
-    // or by checking that the link exists and has correct 'to' attribute.
-    // For a more integrated test, we can mount the layout explicitly.
-    // But here we'll assume the layout is rendered as part of the page (since app.vue includes NuxtLayout).
-    // However, mounting the page alone might not include the layout. 
-    // To test the language switcher, we can mount the layout with the page inside.
-
-    // Instead, we'll test the language switcher separately by mounting the layout.
-    // Let's create a small helper to mount the layout with the page.
-
-    // For brevity, we'll test the switchLocalePath function separately and trust that
-    // the link uses it correctly. Alternatively, we can mount the layout with a mock page.
+    expect(mockStore.setCurrentLang).toHaveBeenCalledWith('pl')
+    expect(wrapper.html()).toContain('O mnie')
+    expect(wrapper.html()).toContain('To jest strona o mnie')
   })
 })

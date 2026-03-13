@@ -2,18 +2,18 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import DefaultLayout from '~/layouts/default.vue'
-import { useAppStore } from '~/stores/app'
 
 vi.mock('~/stores/app', () => ({
   useAppStore: () => ({
     defaultLang: 'en',
     currentLang: 'en',
     langs: ['en', 'pl'],
-    menus: []
+    menus: [],
+    init: vi.fn(),                // added
+    setCurrentLang: vi.fn(),       // added
   })
 }))
 
-// Mock useLocale
 vi.mock('~/composables/useLocale', () => ({
   useLocale: () => ({
     switchLocalePath: (locale: string) => locale === 'pl' ? '/pl' : '/'
@@ -23,9 +23,7 @@ vi.mock('~/composables/useLocale', () => ({
 describe('default layout', () => {
   it('renders language switcher with correct links', async () => {
     const wrapper = await mountSuspended(DefaultLayout, {
-      slots: {
-        default: () => '<div>Page content</div>'
-      }
+      slots: { default: () => '<div>Page content</div>' }
     })
 
     const enLink = wrapper.find('a[href="/"]')

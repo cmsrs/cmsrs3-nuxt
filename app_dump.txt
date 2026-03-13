@@ -204,7 +204,8 @@ console.log('jestem!!!!!!!!!!!!');
 const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
 
 // Znajdź pageId
-const pageId = store.urlMap[currentUrl] || null
+const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
+const pageId = store.urlMap[normalisedUrl] || null
 
 
 if (!isHome && !pageId) {
@@ -590,10 +591,211 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
 === TREE TESTS ===
 tests
 └── nuxt
-    └── index.test.ts
+    ├── index.test.ts
+    ├── layout.spec.ts
+    ├── slug.spec.ts
+    └── useLocale.spec.ts
 
-2 directories, 1 file
+2 directories, 4 files
 === tests ===
+===== tests/nuxt/useLocale.spec.ts =====
+// tests/nuxt/useLocale.spec.ts
+import { describe, it, expect, vi } from 'vitest'
+import { mockNuxtImport } from '@nuxt/test-utils/runtime'
+import { useLocale } from '~/composables/useLocale'
+
+let mockRoutePath = '/en/cms/about/about-me'
+
+mockNuxtImport('useRuntimeConfig', () => {
+  return () => ({
+    public: {
+      domain: 'http://localhost',
+      apiBase: 'http://localhost/api/headless'
+    },
+    app: { baseURL: '/' }   // <-- add this
+  })
+})
+
+vi.mock('~/stores/app', () => ({
+  useAppStore: () => ({
+    defaultLang: 'en',
+    currentLang: 'en',
+    init: vi.fn(),                // added
+    setCurrentLang: vi.fn(),       // added
+  })
+}))
+
+describe('useLocale', () => {
+  it('switchLocalePath returns correct Polish path', () => {
+    mockRoutePath = '/en/cms/about/about-me'
+    const { switchLocalePath } = useLocale()
+    expect(switchLocalePath('pl')).toBe('/pl/cms/about/about-me')
+  })
+
+  it('switchLocalePath returns / for English home', () => {
+    mockRoutePath = '/en'
+    const { switchLocalePath } = useLocale()
+    expect(switchLocalePath('en')).toBe('/')
+  })
+})
+===== tests/nuxt/layout.spec.ts =====
+// tests/nuxt/layout.spec.ts
+import { describe, it, expect, vi } from 'vitest'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
+import DefaultLayout from '~/layouts/default.vue'
+
+vi.mock('~/stores/app', () => ({
+  useAppStore: () => ({
+    defaultLang: 'en',
+    currentLang: 'en',
+    langs: ['en', 'pl'],
+    menus: [],
+    init: vi.fn(),                // added
+    setCurrentLang: vi.fn(),       // added
+  })
+}))
+
+vi.mock('~/composables/useLocale', () => ({
+  useLocale: () => ({
+    switchLocalePath: (locale: string) => locale === 'pl' ? '/pl' : '/'
+  })
+}))
+
+describe('default layout', () => {
+  it('renders language switcher with correct links', async () => {
+    const wrapper = await mountSuspended(DefaultLayout, {
+      slots: { default: () => '<div>Page content</div>' }
+    })
+
+    const enLink = wrapper.find('a[href="/"]')
+    const plLink = wrapper.find('a[href="/pl"]')
+    expect(enLink.exists()).toBe(true)
+    expect(plLink.exists()).toBe(true)
+  })
+})
+===== tests/nuxt/slug.spec.ts =====
+// tests/nuxt/slug.spec.ts
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { mountSuspended, registerEndpoint, mockNuxtImport } from '@nuxt/test-utils/runtime'
+import SlugPage from '~/pages/[...slug].vue'
+
+// Mock the store with all required methods and data
+const mockStore = {
+  initialized: true,
+  defaultLang: 'en',
+  currentLang: 'en',
+  langs: ['en', 'pl'],
+  menus: [
+    {
+      menu_name: { en: 'About', pl: 'O mnie' },
+      pages: [
+        {
+          page_id: 7,
+          url: {
+            en: '/en/cms/about/about-me',
+            pl: '/pl/cms/o-mnie/o-mnie'
+          },
+          short_title: { en: 'About me', pl: 'O mnie' },
+          children: []
+        }
+      ]
+    }
+  ],
+  urlMap: {
+    '/en/cms/about/about-me': 7,
+    '/pl/cms/o-mnie/o-mnie': 7
+  },
+  init: vi.fn(),
+  setCurrentLang: vi.fn((lang) => { mockStore.currentLang = lang }),
+  fetchMenus: vi.fn(),
+  buildUrlMap: vi.fn(),
+}
+
+vi.mock('~/stores/app', () => ({
+  useAppStore: () => mockStore
+}))
+
+// Mock runtime config
+mockNuxtImport('useRuntimeConfig', () => {
+  return () => ({
+    public: {
+      domain: 'http://localhost',
+      apiBase: 'http://localhost/api/headless'
+    }
+  })
+})
+
+// Mock useRouter to provide the afterEach method required by the test utils
+mockNuxtImport('useRouter', () => {
+  return () => ({
+    afterEach: vi.fn(),
+    currentRoute: { value: { path: '/en/cms/about/about-me' } },
+    push: vi.fn(),
+    replace: vi.fn(),
+  })
+})
+
+// Mock useRoute to return the path we want (dynamic per test)
+let mockRoutePath = '/en/cms/about/about-me'
+mockNuxtImport('useRoute', () => {
+  return () => ({ path: mockRoutePath })
+})
+
+// Register API endpoints for page 7 in both languages
+registerEndpoint('/api/headless/page/7/en', {
+  handler: () => ({
+    success: true,
+    data: {
+      id: 7,
+      title: 'About me',
+      content: '<p>This is the about me page.</p>',
+      type: 'cms',
+      images: []
+    }
+  })
+})
+
+registerEndpoint('/api/headless/page/7/pl', {
+  handler: () => ({
+    success: true,
+    data: {
+      id: 7,
+      title: 'O mnie',
+      content: '<p>To jest strona o mnie.</p>',
+      type: 'cms',
+      images: []
+    }
+  })
+})
+
+describe('Slug page', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockStore.currentLang = 'en'
+    mockRoutePath = '/en/cms/about/about-me'
+  })
+
+  it('renders the correct page for /en/cms/about/about-me', async () => {
+    const wrapper = await mountSuspended(SlugPage, {
+      route: '/en/cms/about/about-me'
+    })
+
+    expect(mockStore.setCurrentLang).toHaveBeenCalledWith('en')
+    expect(wrapper.html()).toContain('About me')
+    expect(wrapper.html()).toContain('This is the about me page')
+  })
+
+  it('renders the correct page for /pl/cms/o-mnie/o-mnie', async () => {
+    mockRoutePath = '/pl/cms/o-mnie/o-mnie'
+    const wrapper = await mountSuspended(SlugPage, {
+      route: '/pl/cms/o-mnie/o-mnie'
+    })
+
+    expect(mockStore.setCurrentLang).toHaveBeenCalledWith('pl')
+    expect(wrapper.html()).toContain('O mnie')
+    expect(wrapper.html()).toContain('To jest strona o mnie')
+  })
+})
 ===== tests/nuxt/index.test.ts =====
 import { describe, it, expect, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
@@ -669,6 +871,20 @@ export default defineNuxtConfig({
   }
 })
 === GIT DIFF (ostatnie zmiany) ===
+diff --git a/app/pages/[...slug].vue b/app/pages/[...slug].vue
+index 892bcba..5b7f57e 100644
+--- a/app/pages/[...slug].vue
++++ b/app/pages/[...slug].vue
+@@ -17,7 +17,8 @@ console.log('jestem!!!!!!!!!!!!');
+ const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+ 
+ // Znajdź pageId
+-const pageId = store.urlMap[currentUrl] || null
++const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
++const pageId = store.urlMap[normalisedUrl] || null
+ 
+ 
+ if (!isHome && !pageId) {
 
 > test:run
 > vitest run
@@ -682,20 +898,48 @@ export default defineNuxtConfig({
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39mPlugin: store initialised
 
+[90mstdout[2m | tests/nuxt/slug.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+ [31m❯[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m[32m 148[2mms[22m[39m
+     [2m[90m↓[39m[22m renders the correct page for /en/cms/about/about-me
+     [2m[90m↓[39m[22m renders the correct page for /pl/cms/o-mnie/o-mnie
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39mPlugin: initialising store...
+
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39mPlugin: store initialised
+
+[90mstdout[2m | tests/nuxt/layout.spec.ts
+[22m[39mPlugin: initialising store...
+
+[90mstdout[2m | tests/nuxt/layout.spec.ts
+[22m[39mPlugin: store initialised
+
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+[90mstdout[2m | tests/nuxt/layout.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+ [31m❯[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 376[2mms[22m[39m
+[31m     [31m×[31m switchLocalePath returns correct Polish path[39m[32m 4[2mms[22m[39m
+     [32m✓[39m switchLocalePath returns / for English home[32m 0[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
 [22m[39m0000000000000000111
 
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 263[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
 [22m[39mIndexPage rendered successfully
 
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 549[2mms[22m[39m
-     [33m[2m✓[22m[39m renders without crashing [33m 359[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 566[2mms[22m[39m
+     [33m[2m✓[22m[39m renders without crashing [33m 413[2mms[22m[39m
 
-[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m   Start at [22m 13:00:14
-[2m   Duration [22m 1.20s[2m (transform 409ms, setup 66ms, import 301ms, tests 549ms, environment 184ms)[22m
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m2 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (6)[39m
+[2m   Start at [22m 13:37:13
+[2m   Duration [22m 1.39s[2m (transform 1.15s, setup 364ms, import 1.22s, tests 1.35s, environment 1000ms)[22m
 

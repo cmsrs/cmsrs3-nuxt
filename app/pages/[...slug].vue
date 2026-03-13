@@ -17,7 +17,8 @@ console.log('jestem!!!!!!!!!!!!');
 const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
 
 // Znajdź pageId
-const pageId = store.urlMap[currentUrl] || null
+const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
+const pageId = store.urlMap[normalisedUrl] || null
 
 
 if (!isHome && !pageId) {
