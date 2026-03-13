@@ -42,7 +42,7 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
             class="nav-link"
             :to="menu.url?.[lang]"
           >
-            {{ menu.menu_name }}
+            {{ menu.menu_name?.[lang] }}
           </NuxtLink>
 
           <template v-else>
@@ -52,7 +52,7 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
               role="button"
               data-bs-toggle="dropdown"
             >
-              {{ menu.menu_name }}
+              {{ menu.menu_name?.[lang] }}
             </a>
 
             <ul class="dropdown-menu">
@@ -61,7 +61,7 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
                   class="dropdown-item"
                   :to="page.url?.[lang]"
                 >
-                  {{ page.short_title }}
+                  {{ page.short_title?.[lang] }}
                 </NuxtLink>
 
                 <NuxtLink
@@ -70,7 +70,7 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
                   class="dropdown-item ms-3"
                   :to="child.url?.[lang]"
                 >
-                  {{ child.short_title }}
+                  {{ child.short_title?.[lang] }}
                 </NuxtLink>
               </li>
             </ul>
