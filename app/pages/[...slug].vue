@@ -19,13 +19,6 @@ const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl
 // Znajdź pageId
 const pageId = store.urlMap[currentUrl] || null
 
-// Debugowanie (usuń po rozwiązaniu problemu)
-//if (!pageId && currentUrl !== '/' ) {
-//  console.warn('DEBUG: Szukam URL:', currentUrl, store.urlMap)
-//  throw createError({ statusCode: 500, message: 'Page not found' })
-//}
-
-
 
 if (!isHome && !pageId) {
   console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import IndexPage from '../../app/pages/index.vue'
+import IndexPage from '~/pages/index.vue'
 
 // 1. Mockujemy tylko store, ale w sposób, który nie psuje reszty aplikacji
 vi.mock('~/stores/app', () => ({
@@ -8,6 +8,7 @@ vi.mock('~/stores/app', () => ({
     initialized: true,
     defaultLang: 'en',
     currentLang: 'en',
+    langs: ['en', 'pl'],
     menus: [],
     urlMap: {},
     init: vi.fn(),

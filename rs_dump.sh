@@ -31,4 +31,5 @@ git diff app/ >> app_dump.txt
 
 cat app_dump.txt
 
-npx vitest run tests/nuxt/index.test.ts
+npm run test:run >> app_dump.txt
+#npx vitest run tests/nuxt/index.test.ts
