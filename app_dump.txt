@@ -1,3 +1,674 @@
+app
+├── app.vue
+├── components
+│   ├── HomePage.vue
+│   └── Slider.vue
+├── composables
+│   ├── useApi.ts
+│   └── useLocale.ts
+├── layouts
+│   └── default.vue
+├── middleware
+│   └── i18n.global.ts
+├── pages
+│   ├── index.vue
+│   └── [...slug].vue
+├── plugins
+│   └── init-store.ts
+└── stores
+    └── app.ts
+
+8 directories, 11 files
+=== APP ===
+
+=== FILE CONTENTS ===
+===== app/composables/useApi.ts =====
+interface ApiResponse<T> {
+  success: boolean
+  data: T
+}
+
+export const useApi = () => {
+  const config = useRuntimeConfig()
+
+  const fetchApi = async <T>(url: string): Promise<T> => {
+    const { data, error } = await useFetch<ApiResponse<T>>(url)
+
+    if (error.value || !data.value?.success) {
+      throw new Error('API error')
+    }
+
+    return data.value.data
+  }
+
+  return { fetchApi }
+}
+===== app/composables/useLocale.ts =====
+export const useLocale = () => {
+  const route = useRoute()
+  const store = useAppStore()
+
+  const switchLocalePath = (locale: string): string => {
+    const currentPath = route.path
+    const segments = currentPath.split('/').filter(Boolean)
+
+    // 1. Usuń istniejący prefiks (pl lub en)
+    if (segments.length > 0 && /^(pl|en)$/.test(segments[0])) {
+      segments.shift()
+    }
+
+    const pathWithoutPrefix = '/' + segments.join('/')
+
+    // 2. Specjalny przypadek: Strona główna w języku angielskim ma być czystym "/"
+    if (locale === 'en' && pathWithoutPrefix === '/') {
+      return '/'
+    }
+
+    // 3. Dla każdego innego przypadku dodajemy prefiks (np. /pl/kontakt, /en/about)
+    return `/${locale}${pathWithoutPrefix === '/' ? '' : pathWithoutPrefix}`
+  }
+
+  return { switchLocalePath }
+}
+===== app/plugins/init-store.ts =====
+// app/plugins/init-store.ts
+import { defineNuxtPlugin } from '#app'
+
+export default defineNuxtPlugin(async () => {
+  const store = useAppStore()
+  console.log('Plugin: initialising store...')
+  await store.init()
+  console.log('Plugin: store initialised')
+})
+===== app/stores/app.ts =====
+import { defineStore } from 'pinia'
+
+export const useAppStore = defineStore('app', {
+  state: () => ({
+    defaultLang: null as string | null,
+    initialized: false,
+    menus: [] as any[],
+    currentLang: null as string | null,
+    langs: [] as string[],
+    urlMap: {} as Record<string, number>,   // mapa url -> page_id
+  }),
+
+  actions: {
+    async init() {
+      
+      if (this.initialized) return
+
+      const config = useRuntimeConfig()
+      const cfgData: any = await $fetch(`${config.public.apiBase}/config`)
+
+      
+      if (!cfgData?.success) {
+        console.warn('Failed to fetch config:', cfgData)      
+        throw createError({ statusCode: 500, message: 'Failed to fetch config' })
+      }
+
+      if (cfgData?.success) {
+        this.defaultLang = cfgData.data.default_lang
+        if (!this.defaultLang){
+          console.warn('default_lang must be defined in config')
+          throw createError({ statusCode: 500, message: 'default_lang must be defined' })
+        }
+        this.langs = cfgData.data.langs
+        if (!this.langs){
+          console.warn('langs must be defined in config')
+          throw createError({ statusCode: 500, message: 'langs must be defined' })
+        }
+      }
+      
+      await this.fetchMenus(config)
+      console.log('koniec init')
+
+      this.initialized = true
+    },
+
+    async setCurrentLang(lang: string) {
+      if (this.currentLang === lang ) return
+
+      this.currentLang = lang
+    },
+
+    // app/stores/app.ts
+    async fetchMenus(config: ReturnType<typeof useRuntimeConfig>) {
+      // NOWE API (bez lang)
+      const menuData: any = await $fetch(`${config.public.apiBase}/menus`)
+      if (!menuData?.success) {
+        console.warn('Failed to fetch menus:', menuData)      
+        throw createError({ statusCode: 500, message: 'Failed to fetch menus' })
+      }
+
+      if (menuData?.success) {
+        this.menus = menuData.data
+        this.buildUrlMap()
+      }
+    },
+    
+    buildUrlMap() {
+      const map: Record<string, number> = {}
+
+      for (const menu of this.menus) {
+
+        // menu typu kontakt
+        if (menu.url) {
+          Object.values(menu.url).forEach((url: any) => {
+            map[url] = menu.page_id
+          })
+        }
+
+        if (!menu.pages) continue
+
+        for (const page of menu.pages) {
+
+          if (page.url) {
+            Object.values(page.url).forEach((url: any) => {
+              map[url] = page.page_id
+            })
+          }
+
+          if (!page.children) continue
+
+          for (const child of page.children) {
+            Object.values(child.url).forEach((url: any) => {
+              map[url] = child.page_id
+            })
+          }
+
+        }
+      }
+
+      this.urlMap = map
+    },
+  },
+})
+===== app/pages/[...slug].vue =====
+<script setup lang="ts">
+
+const store = useAppStore()
+const config = useRuntimeConfig()
+const route = useRoute()
+
+// Pobierz język z URL
+const currentUrl = route.path
+const segments = currentUrl.split('/').filter(Boolean)
+const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
+
+// WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
+await store.setCurrentLang(langFromUrl)
+
+console.log('jestem!!!!!!!!!!!!');
+// 5. Sprawdź, czy to strona główna
+const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+
+// Znajdź pageId
+const pageId = store.urlMap[currentUrl] || null
+
+
+if (!isHome && !pageId) {
+  console.warn('Nie znaleziono page_id dla URL:', currentUrl, store.menus)
+  throw createError({ statusCode: 404, message: 'Page not found' })
+}
+
+// 6. Pobranie danych strony
+let page = null
+if (!isHome && pageId) {
+  const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
+  if (!pageResponse?.success) throw createError({ statusCode: 404 })
+  page = pageResponse.data
+}
+
+// Dane formularza kontaktowego (tylko dla stron kontaktowych)
+const email = ref('')
+const message = ref('')
+const emailErr = ref('')
+const messageErr = ref('')
+const messageInfo = ref('')
+
+const contact = async (event: Event) => {
+  event.preventDefault()
+  emailErr.value = ''
+  messageErr.value = ''
+  messageInfo.value = ''
+
+  if (!email.value) {
+    emailErr.value = 'Email is required'
+    return
+  }
+  if (!message.value) {
+    messageErr.value = 'Message is required'
+    return
+  }
+
+  try {
+    await $fetch(`${config.public.domain}/api/contact/${store.defaultLang}`, {
+      method: 'POST',
+      body: { email: email.value, message: message.value, pageId: page!.id }
+    })
+    messageInfo.value = 'Message sent successfully'
+    email.value = ''
+    message.value = ''
+  } catch (error) {
+    messageInfo.value = "We're sorry, but this action is not available in the demo version."
+  }
+}
+</script>
+
+<template>
+  <div>
+    <!-- Strona główna (dla /pl, /en jeśli brak prefiksu itp.) -->
+    <HomePage v-if="isHome" />
+
+    <!-- Zwykłe strony -->
+    <div v-else>
+      <h1 class="mb-3">{{ page.title }}</h1>
+
+      <!-- Strona kontaktowa -->
+      <div v-if="page.type === 'contact'">
+        <form @submit="contact">
+          <div class="mb-4">
+            <input
+              v-model="email"
+              type="email"
+              placeholder="Your email"
+              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <span v-if="emailErr" class="text-red-500 text-sm">{{ emailErr }}</span>
+          </div>
+          <div class="mb-6">
+            <textarea
+              v-model="message"
+              placeholder="Your message"
+              rows="8"
+              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            ></textarea>
+            <span v-if="messageErr" class="text-red-500 text-sm">{{ messageErr }}</span>
+          </div>
+          <button type="submit" class="btn btn-secondary">
+            Send
+          </button>
+          <div v-if="messageInfo" class="mt-3 text-green-500">{{ messageInfo }}</div>
+        </form>
+      </div>
+
+      <!-- Strona sklepu -->
+      <div v-else-if="page.type === 'shop'">
+        <div class="row">
+          <div v-for="product in page.products" :key="product.id" class="col-md-6 mb-5">
+            <div class="row">
+              <div class="col">
+                <a v-if="product.images?.length" :href="`/${store.defaultLang}${product.url}`">
+                  <img 
+                    class="m-3" 
+                    :src="`${config.public.domain}${product.images[0].fs.medium}`"
+                    :alt="product.images[0].alt || product.product_name"
+                  />
+                </a>
+                <ul class="ms-3 list-unstyled">
+                  <li class="product-test">{{ product.product_name }}</li>
+                  <li>Nazwa: <a :href="`/${store.defaultLang}${product.url}`">{{ product.product_name }}</a></li>
+                  <li v-if="product.sku">Sku: {{ product.sku }}</li>
+                  <li>Cena: {{ product.price_description }}</li>
+                  <li v-if="product.product_description">{{ product.product_description }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zwykła strona z treścią i obrazkami -->
+      <div v-else>
+        <div v-html="page.content"></div>
+        <div v-if="page.images" class="images-gallery mt-6">
+          <img
+            v-for="image in page.images"
+            :key="image.id"
+            :src="`${config.public.domain}${image.fs.medium}`"
+            :alt="(store.defaultLang && image.alt[store.defaultLang]) || image.name"
+            class="mb-4"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+===== app/pages/index.vue =====
+<template>
+  <HomePage />
+</template>
+===== app/components/Slider.vue =====
+<script setup lang="ts">
+import { Swiper, SwiperSlide } from 'swiper/vue'
+import { Pagination } from 'swiper/modules'
+
+interface Image {
+  id: number
+  fs: { medium: string }
+  alt: Record<string, string>
+}
+
+defineProps<{
+  images: Image[]
+  lang: string
+  domain: string
+}>()
+
+const modules = [Pagination]
+</script>
+
+<style scoped>
+.swiper {
+  max-height: 400px;
+}
+
+.swiper-slide {
+  height: 400px;
+  overflow: hidden;
+}
+
+:deep(.swiper-pagination-bullet-active) {
+  background-color: #000;
+}
+
+.img-fluid {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+</style>
+
+
+
+<template>
+  <Swiper
+    :slides-per-view="1"
+    :loop="true"
+    :pagination="{ clickable: true }"
+    :modules="modules"
+  >
+    <SwiperSlide v-for="img in images" :key="img.id">
+      <img
+        class="img-fluid"
+        :src="domain + img.fs.medium"
+        :alt="img.alt[lang]"
+        loading="lazy"
+      />
+    </SwiperSlide>
+  </Swiper>
+</template>
+===== app/components/HomePage.vue =====
+<script setup lang="ts">
+console.log('0000000000000000111')
+const store = useAppStore()
+const config = useRuntimeConfig()
+
+// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
+//if (!store.initialized) {
+//  await store.init()
+//}
+
+if (!store.currentLang) {
+  await store.setCurrentLang(store.defaultLang || 'en')
+}
+
+// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
+const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
+  `${config.public.apiBase}/pages-type/inner`
+)
+
+// Reaktywne obliczenia na podstawie danych
+const inner = computed(() => response.value?.data || [])
+
+// Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
+const slider = computed(() =>
+  inner.value.find(i => i.short_title?.[store.defaultLang!] === 'main_page_slider')
+)
+
+const boxes = computed(() =>
+  inner.value.filter(i => i.short_title?.[store.defaultLang!]?.includes('main_page_box'))
+)
+</script>
+
+<template>
+  <div>
+    <Slider
+      v-if="slider"
+      :images="slider.images || []"
+      :lang="store.currentLang || store.defaultLang || 'en'"
+      :domain="config.public.apiBase.replace('/api/headless', '')"
+    />
+
+    <div class="row mt-4">
+      <div v-for="box in boxes" :key="box.id" class="col-md-4">
+        <!-- Treść z aktualnego języka -->
+        <div class="card p-3 mb-3" v-html="box.content?.[store.currentLang!]"></div>
+      </div>
+    </div>
+  </div>
+</template>
+===== app/middleware/i18n.global.ts =====
+export default defineNuxtRouteMiddleware(async (to, from) => {
+  const store = useAppStore()
+  
+  const segments = to.path.split('/').filter(Boolean)
+
+  // Przypadek strony głównej "/"
+  if (segments.length === 0) {
+    await store.setCurrentLang(store.defaultLang || 'en')
+    return // Zakończ middleware tutaj
+  }
+
+  const firstSegment = segments[0] || store.defaultLang || 'en'
+  if (['pl', 'en'].includes(firstSegment)) {
+    await store.setCurrentLang(firstSegment)
+  } else {
+    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
+    // ustaw domyślny, ale nie rób nieskończonego przekierowania
+    await store.setCurrentLang(store.defaultLang || 'en')
+  }
+})
+===== app/app.vue =====
+<template>
+  <NuxtLayout>
+    <NuxtPage />
+  </NuxtLayout>    
+</template>
+
+===== app/layouts/default.vue =====
+<script setup lang="ts">
+const store = useAppStore()
+const { switchLocalePath } = useLocale()
+
+const lang = computed(() => store.currentLang || store.defaultLang || 'en')
+</script>
+
+<style scoped>
+.logo {
+  max-height: 40px;    /* lub inna wartość */
+  width: auto;         /* zachowaj proporcje */
+}
+</style>
+
+<template>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+  <div class="container">
+    <NuxtLink class="navbar-brand" to="/">
+      <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" >
+    </NuxtLink>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNavbar"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li
+          v-for="menu in store.menus"
+          :key="menu.menu_name"
+          class="nav-item"
+          :class="{ dropdown: menu.pages?.length > 1 }"
+        >
+          <NuxtLink
+            v-if="menu.pages?.length === 0"
+            class="nav-link"
+            :to="menu.url?.[lang]"
+          >
+            {{ menu.menu_name?.[lang] }}
+          </NuxtLink>
+
+          <template v-else>
+            <a
+              class="nav-link dropdown-toggle"
+              href="#"
+              role="button"
+              data-bs-toggle="dropdown"
+            >
+              {{ menu.menu_name?.[lang] }}
+            </a>
+
+            <ul class="dropdown-menu">
+              <li v-for="page in menu.pages" :key="page.page_id">
+                <NuxtLink
+                  class="dropdown-item"
+                  :to="page.url?.[lang]"
+                >
+                  {{ page.short_title?.[lang] }}
+                </NuxtLink>
+
+                <NuxtLink
+                  v-for="child in page.children"
+                  :key="child.page_id"
+                  class="dropdown-item ms-3"
+                  :to="child.url?.[lang]"
+                >
+                  {{ child.short_title?.[lang] }}
+                </NuxtLink>
+              </li>
+            </ul>
+          </template>
+        </li>
+      </ul>
+
+      <ul class="nav navbar-nav ms-auto">
+        <li class="d-flex flex-row">
+          <div class="ms-2 nav-item">
+            <NuxtLink
+              class="changelang nav-link"
+              :class="{ active: store.currentLang === 'en' }"
+              :to="switchLocalePath('en')"
+            >
+              <img src="/images/en.png" alt="en" /> EN
+            </NuxtLink>
+          </div>
+          <div class="ms-2 nav-item">
+            <NuxtLink
+              class="changelang nav-link"
+              :class="{ active: store.currentLang === 'pl' }"
+              :to="switchLocalePath('pl')"
+            >
+              <img src="/images/pl.png" alt="pl" /> PL
+            </NuxtLink>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<div class="container mt-4">
+  <slot />
+</div>
+</template>
+=== TREE TESTS ===
+tests
+└── nuxt
+    └── index.test.ts
+
+2 directories, 1 file
+=== tests ===
+===== tests/nuxt/index.test.ts =====
+import { describe, it, expect, vi } from 'vitest'
+import { mountSuspended } from '@nuxt/test-utils/runtime'
+import IndexPage from '~/pages/index.vue'
+
+// 1. Mockujemy tylko store, ale w sposób, który nie psuje reszty aplikacji
+vi.mock('~/stores/app', () => ({
+  useAppStore: () => ({
+    initialized: true,
+    defaultLang: 'en',
+    currentLang: 'en',
+    langs: ['en', 'pl'],
+    menus: [],
+    urlMap: {},
+    init: vi.fn(),
+    setCurrentLang: vi.fn(),
+  })
+}))
+
+// USUNĘLIŚMY vi.mock('#app', ...) - Nuxt Test Utils zajmie się tym automatycznie
+
+describe('IndexPage', () => {
+  it('renders without crashing', async () => {
+    // mountSuspended jest kluczowe dla komponentów Nuxt 3 (obsługuje asynchroniczny setup)
+    const wrapper = await mountSuspended(IndexPage)
+    
+    expect(wrapper.exists()).toBe(true)
+    console.log('IndexPage rendered successfully')
+  })
+})
+
+=== nuxt.config.ts ===
+//import { defineNuxtConfig } from 'nuxt'
+
+const domain = 'http://demo-headless.cmsrs.pl'
+
+export default defineNuxtConfig({
+  compatibilityDate: '2026-02-24',
+  modules: ['@pinia/nuxt'],
+  vite: {
+    optimizeDeps: {
+      include: [
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        'swiper/vue',
+        'swiper/modules',
+      ]
+    }
+  },
+  css: [
+    'bootstrap/dist/css/bootstrap.min.css',
+    'swiper/css/pagination',
+    'swiper/css'
+  ],
+  routeRules: {
+    '/**': { prerender: true } // SSG
+  },
+  runtimeConfig: {
+    public: {
+      domain,
+      apiBase: `${domain}/api/headless`
+    }
+  },
+  app: {
+    head: {
+      script: [
+        {
+          src: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+          defer: true
+        }
+      ]
+    }
+  }
+})
+=== GIT DIFF (ostatnie zmiany) ===
 
 > test:run
 > vitest run
@@ -20,11 +691,11 @@
 [90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
 [22m[39mIndexPage rendered successfully
 
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 566[2mms[22m[39m
-     [33m[2m✓[22m[39m renders without crashing [33m 363[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 549[2mms[22m[39m
+     [33m[2m✓[22m[39m renders without crashing [33m 359[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
 [2m      Tests [22m [1m[32m1 passed[39m[22m[90m (1)[39m
-[2m   Start at [22m 12:49:47
-[2m   Duration [22m 1.24s[2m (transform 441ms, setup 65ms, import 340ms, tests 566ms, environment 182ms)[22m
+[2m   Start at [22m 13:00:14
+[2m   Duration [22m 1.20s[2m (transform 409ms, setup 66ms, import 301ms, tests 549ms, environment 184ms)[22m
 
