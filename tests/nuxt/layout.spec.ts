@@ -26,7 +26,7 @@ describe('default layout', () => {
       slots: { default: () => '<div>Page content</div>' }
     })
 
-    const enLink = wrapper.find('a[href="/en"]')
+    const enLink = wrapper.find('a[href="/"]')
     const plLink = wrapper.find('a[href="/pl"]')
     expect(enLink.exists()).toBe(true)
     expect(plLink.exists()).toBe(true)

@@ -5,13 +5,19 @@ import { useLocale } from '~/composables/useLocale'
 
 let mockRoutePath = '/en/cms/about/about-me'
 
+mockNuxtImport('useRoute', () => {
+  return () => ({
+    get path() { return mockRoutePath }
+  })
+})
+
 mockNuxtImport('useRuntimeConfig', () => {
   return () => ({
     public: {
       domain: 'http://localhost',
       apiBase: 'http://localhost/api/headless'
     },
-    app: { baseURL: '/' }   // <-- add this
+    app: { baseURL: '/' }
   })
 })
 
@@ -19,8 +25,18 @@ vi.mock('~/stores/app', () => ({
   useAppStore: () => ({
     defaultLang: 'en',
     currentLang: 'en',
-    init: vi.fn(),                // added
-    setCurrentLang: vi.fn(),       // added
+    init: vi.fn(),
+    setCurrentLang: vi.fn(),
+    urlMap: {
+      '/en/cms/about/about-me': 7,
+      '/pl/cms/o-mnie/o-mnie': 7
+    },
+    pageUrls: {
+      7: {
+        en: '/en/cms/about/about-me',
+        pl: '/pl/cms/o-mnie/o-mnie'
+      }
+    }
   })
 }))
 
@@ -28,7 +44,7 @@ describe('useLocale', () => {
   it('switchLocalePath returns correct Polish path', () => {
     mockRoutePath = '/en/cms/about/about-me'
     const { switchLocalePath } = useLocale()
-    expect(switchLocalePath('pl')).toBe('/pl/cms/about/about-me')
+    expect(switchLocalePath('pl')).toBe('/pl/cms/o-mnie/o-mnie')
   })
 
   it('switchLocalePath returns / for English home', () => {

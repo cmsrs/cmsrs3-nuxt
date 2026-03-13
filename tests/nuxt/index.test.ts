@@ -1,8 +1,8 @@
+// tests/nuxt/index.test.ts
 import { describe, it, expect, vi } from 'vitest'
-import { mountSuspended } from '@nuxt/test-utils/runtime'
+import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import IndexPage from '~/pages/index.vue'
 
-// 1. Mockujemy tylko store, ale w sposób, który nie psuje reszty aplikacji
 vi.mock('~/stores/app', () => ({
   useAppStore: () => ({
     initialized: true,
@@ -16,14 +16,16 @@ vi.mock('~/stores/app', () => ({
   })
 }))
 
-// USUNĘLIŚMY vi.mock('#app', ...) - Nuxt Test Utils zajmie się tym automatycznie
+registerEndpoint('/api/headless/pages-type/inner', {
+  handler: () => ({
+    success: true,
+    data: []
+  })
+})
 
 describe('IndexPage', () => {
   it('renders without crashing', async () => {
-    // mountSuspended jest kluczowe dla komponentów Nuxt 3 (obsługuje asynchroniczny setup)
     const wrapper = await mountSuspended(IndexPage)
-    
     expect(wrapper.exists()).toBe(true)
-    console.log('IndexPage rendered successfully')
   })
 })
