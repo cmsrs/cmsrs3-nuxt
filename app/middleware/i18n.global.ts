@@ -5,16 +5,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // Przypadek strony głównej "/"
   if (segments.length === 0) {
-    await store.setCurrentLang(store.defaultLang || 'en')
+    await store.setCurrentLang(store.defaultLang)
     return // Zakończ middleware tutaj
   }
 
-  const firstSegment = segments[0] || store.defaultLang || 'en'
-  if (['pl', 'en'].includes(firstSegment)) {
+  const firstSegment = segments[0] || store.defaultLang
+  if ( store.langs.includes(firstSegment)) {
     await store.setCurrentLang(firstSegment)
   } else {
-    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
-    // ustaw domyślny, ale nie rób nieskończonego przekierowania
-    await store.setCurrentLang(store.defaultLang || 'en')
+    await store.setCurrentLang(store.defaultLang)
   }
 })

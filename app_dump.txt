@@ -52,8 +52,20 @@ export const useLocale = () => {
   const switchLocalePath = (locale: string): string => {
     const currentPath = route.path
 
+    if(! store.langs.includes(locale)) {
+      console.warn(`[useLocale] No locale found for ${locale}`)
+      return '/'
+    }
+    const pathParts = currentPath.split('/').filter(Boolean)
+    const firstSegment = pathParts[0] || ''
+    
+
     // Strona główna
-    if (currentPath === '/' || currentPath === '/en' || currentPath === '/pl') {
+    const isHome = currentPath === '/'
+    const isRoot = pathParts.length === 0 || 
+                   (pathParts.length === 1 && store.langs.includes(firstSegment))
+
+    if (isHome || isRoot) {
       return locale === store.defaultLang ? '/' : `/${locale}`
     }
 
@@ -76,19 +88,17 @@ import { defineNuxtPlugin } from '#app'
 
 export default defineNuxtPlugin(async () => {
   const store = useAppStore()
-  console.log('Plugin: initialising store...')
   await store.init()
-  console.log('Plugin: store initialised')
 })
 ===== app/stores/app.ts =====
 import { defineStore } from 'pinia'
 
 export const useAppStore = defineStore('app', {
   state: () => ({
-    defaultLang: null as string | null,
+    defaultLang: '' as string,
     initialized: false,
     menus: [] as any[],
-    currentLang: null as string | null,
+    currentLang: '' as string,
     langs: [] as string[],
     urlMap: {} as Record<string, number>,   // mapa url -> page_id
     pageUrls: {} as Record<number, Record<string, string>>,
@@ -122,7 +132,6 @@ export const useAppStore = defineStore('app', {
       }
       
       await this.fetchMenus(config)
-      console.log('koniec init')
 
       this.initialized = true
     },
@@ -199,15 +208,19 @@ const route = useRoute()
 
 // Pobierz język z URL
 const currentUrl = route.path
-const segments = currentUrl.split('/').filter(Boolean)
-const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
+const firstSegment = route.path.split('/')[1] || ''
 
-// WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
+let langFromUrl = store.defaultLang
+
+if (firstSegment && store.langs.includes(firstSegment)) {
+  langFromUrl = firstSegment
+}
+
 await store.setCurrentLang(langFromUrl)
 
-console.log('jestem!!!!!!!!!!!!');
 // 5. Sprawdź, czy to strona główna
-const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+const isHome =
+  currentUrl === '/' || store.langs.some(lang => currentUrl === `/${lang}`)
 
 // Znajdź pageId
 const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
@@ -408,17 +421,11 @@ const modules = [Pagination]
 </template>
 ===== app/components/HomePage.vue =====
 <script setup lang="ts">
-console.log('0000000000000000111')
 const store = useAppStore()
 const config = useRuntimeConfig()
 
-// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
-//if (!store.initialized) {
-//  await store.init()
-//}
-
 if (!store.currentLang) {
-  await store.setCurrentLang(store.defaultLang || 'en')
+  await store.setCurrentLang(store.defaultLang)
 }
 
 // Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
@@ -464,17 +471,15 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   // Przypadek strony głównej "/"
   if (segments.length === 0) {
-    await store.setCurrentLang(store.defaultLang || 'en')
+    await store.setCurrentLang(store.defaultLang)
     return // Zakończ middleware tutaj
   }
 
-  const firstSegment = segments[0] || store.defaultLang || 'en'
-  if (['pl', 'en'].includes(firstSegment)) {
+  const firstSegment = segments[0] || store.defaultLang
+  if ( store.langs.includes(firstSegment)) {
     await store.setCurrentLang(firstSegment)
   } else {
-    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
-    // ustaw domyślny, ale nie rób nieskończonego przekierowania
-    await store.setCurrentLang(store.defaultLang || 'en')
+    await store.setCurrentLang(store.defaultLang)
   }
 })
 ===== app/app.vue =====
@@ -490,6 +495,10 @@ const store = useAppStore()
 const { switchLocalePath } = useLocale()
 
 const lang = computed(() => store.currentLang || store.defaultLang || 'en')
+
+const homePath = computed(() => {
+  return lang.value === store.defaultLang ? '/' : `/${lang.value}`
+})
 </script>
 
 <style scoped>
@@ -502,7 +511,7 @@ const lang = computed(() => store.currentLang || store.defaultLang || 'en')
 <template>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
   <div class="container">
-    <NuxtLink class="navbar-brand" to="/">
+    <NuxtLink class="navbar-brand" :to="homePath">
       <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" >
     </NuxtLink>
 
@@ -632,6 +641,7 @@ vi.mock('~/stores/app', () => ({
   useAppStore: () => ({
     defaultLang: 'en',
     currentLang: 'en',
+    langs: ['en', 'pl'],
     init: vi.fn(),
     setCurrentLang: vi.fn(),
     urlMap: {
@@ -877,6 +887,146 @@ export default defineNuxtConfig({
   }
 })
 === GIT DIFF (ostatnie zmiany) ===
+diff --git a/app/components/HomePage.vue b/app/components/HomePage.vue
+index b0b3a02..e821d15 100644
+--- a/app/components/HomePage.vue
++++ b/app/components/HomePage.vue
+@@ -1,15 +1,9 @@
+ <script setup lang="ts">
+-console.log('0000000000000000111')
+ const store = useAppStore()
+ const config = useRuntimeConfig()
+ 
+-// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
+-//if (!store.initialized) {
+-//  await store.init()
+-//}
+-
+ if (!store.currentLang) {
+-  await store.setCurrentLang(store.defaultLang || 'en')
++  await store.setCurrentLang(store.defaultLang)
+ }
+ 
+ // Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
+diff --git a/app/composables/useLocale.ts b/app/composables/useLocale.ts
+index 6e57783..e33fab2 100644
+--- a/app/composables/useLocale.ts
++++ b/app/composables/useLocale.ts
+@@ -6,8 +6,20 @@ export const useLocale = () => {
+   const switchLocalePath = (locale: string): string => {
+     const currentPath = route.path
+ 
++    if(! store.langs.includes(locale)) {
++      console.warn(`[useLocale] No locale found for ${locale}`)
++      return '/'
++    }
++    const pathParts = currentPath.split('/').filter(Boolean)
++    const firstSegment = pathParts[0] || ''
++    
++
+     // Strona główna
+-    if (currentPath === '/' || currentPath === '/en' || currentPath === '/pl') {
++    const isHome = currentPath === '/'
++    const isRoot = pathParts.length === 0 || 
++                   (pathParts.length === 1 && store.langs.includes(firstSegment))
++
++    if (isHome || isRoot) {
+       return locale === store.defaultLang ? '/' : `/${locale}`
+     }
+ 
+diff --git a/app/middleware/i18n.global.ts b/app/middleware/i18n.global.ts
+index f41aa9c..dc9a93a 100644
+--- a/app/middleware/i18n.global.ts
++++ b/app/middleware/i18n.global.ts
+@@ -5,16 +5,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
+ 
+   // Przypadek strony głównej "/"
+   if (segments.length === 0) {
+-    await store.setCurrentLang(store.defaultLang || 'en')
++    await store.setCurrentLang(store.defaultLang)
+     return // Zakończ middleware tutaj
+   }
+ 
+-  const firstSegment = segments[0] || store.defaultLang || 'en'
+-  if (['pl', 'en'].includes(firstSegment)) {
++  const firstSegment = segments[0] || store.defaultLang
++  if ( store.langs.includes(firstSegment)) {
+     await store.setCurrentLang(firstSegment)
+   } else {
+-    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
+-    // ustaw domyślny, ale nie rób nieskończonego przekierowania
+-    await store.setCurrentLang(store.defaultLang || 'en')
++    await store.setCurrentLang(store.defaultLang)
+   }
+ })
+\ No newline at end of file
+diff --git a/app/pages/[...slug].vue b/app/pages/[...slug].vue
+index 5b7f57e..03489e0 100644
+--- a/app/pages/[...slug].vue
++++ b/app/pages/[...slug].vue
+@@ -6,15 +6,19 @@ const route = useRoute()
+ 
+ // Pobierz język z URL
+ const currentUrl = route.path
+-const segments = currentUrl.split('/').filter(Boolean)
+-const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
++const firstSegment = route.path.split('/')[1] || ''
++
++let langFromUrl = store.defaultLang
++
++if (firstSegment && store.langs.includes(firstSegment)) {
++  langFromUrl = firstSegment
++}
+ 
+-// WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
+ await store.setCurrentLang(langFromUrl)
+ 
+-console.log('jestem!!!!!!!!!!!!');
+ // 5. Sprawdź, czy to strona główna
+-const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
++const isHome =
++  currentUrl === '/' || store.langs.some(lang => currentUrl === `/${lang}`)
+ 
+ // Znajdź pageId
+ const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
+diff --git a/app/plugins/init-store.ts b/app/plugins/init-store.ts
+index 7f4fd73..dde849f 100644
+--- a/app/plugins/init-store.ts
++++ b/app/plugins/init-store.ts
+@@ -3,7 +3,5 @@ import { defineNuxtPlugin } from '#app'
+ 
+ export default defineNuxtPlugin(async () => {
+   const store = useAppStore()
+-  console.log('Plugin: initialising store...')
+   await store.init()
+-  console.log('Plugin: store initialised')
+ })
+\ No newline at end of file
+diff --git a/app/stores/app.ts b/app/stores/app.ts
+index e825e5b..0615bf2 100644
+--- a/app/stores/app.ts
++++ b/app/stores/app.ts
+@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
+ 
+ export const useAppStore = defineStore('app', {
+   state: () => ({
+-    defaultLang: null as string | null,
++    defaultLang: '' as string,
+     initialized: false,
+     menus: [] as any[],
+-    currentLang: null as string | null,
++    currentLang: '' as string,
+     langs: [] as string[],
+     urlMap: {} as Record<string, number>,   // mapa url -> page_id
+     pageUrls: {} as Record<number, Record<string, string>>,
+@@ -39,7 +39,6 @@ export const useAppStore = defineStore('app', {
+       }
+       
+       await this.fetchMenus(config)
+-      console.log('koniec init')
+ 
+       this.initialized = true
+     },
 
 > test:run
 > vitest run
@@ -884,59 +1034,26 @@ export default defineNuxtConfig({
 
 [1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/home/rob/js/cmsrs3-nuxt[39m
 
-[90mstdout[2m | tests/nuxt/index.test.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/index.test.ts
-[22m[39mPlugin: store initialised
-
 [90mstdout[2m | tests/nuxt/slug.spec.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/slug.spec.ts
-[22m[39mPlugin: store initialised
-
-[90mstdout[2m | tests/nuxt/layout.spec.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/layout.spec.ts
-[22m[39mPlugin: store initialised
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
 
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/slug.spec.ts
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
+ [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 381[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39mPlugin: initialising store...
-
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39mPlugin: store initialised
-
-[90mstdout[2m | tests/nuxt/slug.spec.ts[2m > [22m[2mSlug page[2m > [22m[2mrenders the correct page for /en/cms/about/about-me
-[22m[39mjestem!!!!!!!!!!!!
-
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
-
- [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 332[2mms[22m[39m
-[90mstdout[2m | tests/nuxt/index.test.ts[2m > [22m[2mIndexPage[2m > [22m[2mrenders without crashing
-[22m[39m0000000000000000111
-
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 255[2mms[22m[39m
-[90mstdout[2m | tests/nuxt/slug.spec.ts[2m > [22m[2mSlug page[2m > [22m[2mrenders the correct page for /pl/cms/o-mnie/o-mnie
-[22m[39mjestem!!!!!!!!!!!!
-
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 196[2mms[22m[39m
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 526[2mms[22m[39m
-     [33m[2m✓[22m[39m renders without crashing [33m 375[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 175[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 253[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 531[2mms[22m[39m
+     [33m[2m✓[22m[39m renders without crashing [33m 382[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 20:29:08
-[2m   Duration [22m 1.39s[2m (transform 1.18s, setup 352ms, import 1.26s, tests 1.31s, environment 1.10s)[22m
+[2m   Start at [22m 14:20:28
+[2m   Duration [22m 1.38s[2m (transform 1.17s, setup 347ms, import 1.24s, tests 1.34s, environment 1.00s)[22m
 

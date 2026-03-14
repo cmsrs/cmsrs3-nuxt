@@ -6,15 +6,19 @@ const route = useRoute()
 
 // Pobierz język z URL
 const currentUrl = route.path
-const segments = currentUrl.split('/').filter(Boolean)
-const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
+const firstSegment = route.path.split('/')[1] || ''
 
-// WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
+let langFromUrl = store.defaultLang
+
+if (firstSegment && store.langs.includes(firstSegment)) {
+  langFromUrl = firstSegment
+}
+
 await store.setCurrentLang(langFromUrl)
 
-console.log('jestem!!!!!!!!!!!!');
 // 5. Sprawdź, czy to strona główna
-const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
+const isHome =
+  currentUrl === '/' || store.langs.some(lang => currentUrl === `/${lang}`)
 
 // Znajdź pageId
 const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'

@@ -6,8 +6,20 @@ export const useLocale = () => {
   const switchLocalePath = (locale: string): string => {
     const currentPath = route.path
 
+    if(! store.langs.includes(locale)) {
+      console.warn(`[useLocale] No locale found for ${locale}`)
+      return '/'
+    }
+    const pathParts = currentPath.split('/').filter(Boolean)
+    const firstSegment = pathParts[0] || ''
+    
+
     // Strona główna
-    if (currentPath === '/' || currentPath === '/en' || currentPath === '/pl') {
+    const isHome = currentPath === '/'
+    const isRoot = pathParts.length === 0 || 
+                   (pathParts.length === 1 && store.langs.includes(firstSegment))
+
+    if (isHome || isRoot) {
       return locale === store.defaultLang ? '/' : `/${locale}`
     }
 

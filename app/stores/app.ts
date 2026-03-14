@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
 
 export const useAppStore = defineStore('app', {
   state: () => ({
-    defaultLang: null as string | null,
+    defaultLang: '' as string,
     initialized: false,
     menus: [] as any[],
-    currentLang: null as string | null,
+    currentLang: '' as string,
     langs: [] as string[],
     urlMap: {} as Record<string, number>,   // mapa url -> page_id
     pageUrls: {} as Record<number, Record<string, string>>,
@@ -39,7 +39,6 @@ export const useAppStore = defineStore('app', {
       }
       
       await this.fetchMenus(config)
-      console.log('koniec init')
 
       this.initialized = true
     },

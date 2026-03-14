@@ -25,6 +25,7 @@ vi.mock('~/stores/app', () => ({
   useAppStore: () => ({
     defaultLang: 'en',
     currentLang: 'en',
+    langs: ['en', 'pl'],
     init: vi.fn(),
     setCurrentLang: vi.fn(),
     urlMap: {
