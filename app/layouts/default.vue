@@ -14,112 +14,137 @@ const companyData = computed(() => {
 </script>
 
 <style scoped>
+/* style dla logo - zostawiamy */
 .logo {
-  max-height: 40px;    /* lub inna wartość */
-  width: auto;         /* zachowaj proporcje */
+  max-height: 40px;
+  width: auto;
+}
+</style>
+
+<style>
+/* Globalne style dla całej aplikacji - umieszczamy bez scoped, aby wpłynąć na html/body */
+html, body, #__nuxt {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1; /* zajmuje całą dostępną przestrzeń */
 }
 </style>
 
 <template>
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container">
-    <NuxtLink class="navbar-brand" :to="homePath">
-      <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" >
-    </NuxtLink>
+  <div class="layout-wrapper">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <NuxtLink class="navbar-brand" :to="homePath">
+          <img src="/images/logo_cmsrs.svg" alt="cmsRS" class="logo" />
+        </NuxtLink>
 
-    <button
-      class="navbar-toggler"
-      type="button"
-      data-bs-toggle="collapse"
-      data-bs-target="#mainNavbar"
-    >
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="mainNavbar">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li
-          v-for="menu in store.menus"
-          :key="menu.menu_name"
-          class="nav-item"
-          :class="{ dropdown: menu.pages?.length > 1 }"
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#mainNavbar"
         >
-          <NuxtLink
-            v-if="menu.pages?.length === 0"
-            class="nav-link"
-            :to="menu.url?.[lang]"
-          >
-            {{ menu.menu_name?.[lang] }}
-          </NuxtLink>
+          <span class="navbar-toggler-icon"></span>
+        </button>
 
-          <template v-else>
-            <a
-              class="nav-link dropdown-toggle"
-              href="#"
-              role="button"
-              data-bs-toggle="dropdown"
+        <div class="collapse navbar-collapse" id="mainNavbar">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li
+              v-for="menu in store.menus"
+              :key="menu.menu_name"
+              class="nav-item"
+              :class="{ dropdown: menu.pages?.length > 1 }"
             >
-              {{ menu.menu_name?.[lang] }}
-            </a>
+              <NuxtLink
+                v-if="menu.pages?.length === 0"
+                class="nav-link"
+                :to="menu.url?.[lang]"
+              >
+                {{ menu.menu_name?.[lang] }}
+              </NuxtLink>
 
-            <ul class="dropdown-menu">
-              <li v-for="page in menu.pages" :key="page.page_id">
-                <NuxtLink
-                  class="dropdown-item"
-                  :to="page.url?.[lang]"
+              <template v-else>
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  role="button"
+                  data-bs-toggle="dropdown"
                 >
-                  {{ page.short_title?.[lang] }}
-                </NuxtLink>
+                  {{ menu.menu_name?.[lang] }}
+                </a>
 
+                <ul class="dropdown-menu">
+                  <li v-for="page in menu.pages" :key="page.page_id">
+                    <NuxtLink
+                      class="dropdown-item"
+                      :to="page.url?.[lang]"
+                    >
+                      {{ page.short_title?.[lang] }}
+                    </NuxtLink>
+
+                    <NuxtLink
+                      v-for="child in page.children"
+                      :key="child.page_id"
+                      class="dropdown-item ms-3"
+                      :to="child.url?.[lang]"
+                    >
+                      {{ child.short_title?.[lang] }}
+                    </NuxtLink>
+                  </li>
+                </ul>
+              </template>
+            </li>
+          </ul>
+
+          <ul class="nav navbar-nav ms-auto">
+            <li class="d-flex flex-row">
+              <div class="ms-2 nav-item">
                 <NuxtLink
-                  v-for="child in page.children"
-                  :key="child.page_id"
-                  class="dropdown-item ms-3"
-                  :to="child.url?.[lang]"
+                  class="changelang nav-link"
+                  :class="{ active: store.currentLang === 'en' }"
+                  :to="switchLocalePath('en')"
                 >
-                  {{ child.short_title?.[lang] }}
+                  <img src="/images/en.png" alt="en" /> EN
                 </NuxtLink>
-              </li>
-            </ul>
-          </template>
-        </li>
-      </ul>
+              </div>
+              <div class="ms-2 nav-item">
+                <NuxtLink
+                  class="changelang nav-link"
+                  :class="{ active: store.currentLang === 'pl' }"
+                  :to="switchLocalePath('pl')"
+                >
+                  <img src="/images/pl.png" alt="pl" /> PL
+                </NuxtLink>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
 
-      <ul class="nav navbar-nav ms-auto">
-        <li class="d-flex flex-row">
-          <div class="ms-2 nav-item">
-            <NuxtLink
-              class="changelang nav-link"
-              :class="{ active: store.currentLang === 'en' }"
-              :to="switchLocalePath('en')"
-            >
-              <img src="/images/en.png" alt="en" /> EN
-            </NuxtLink>
-          </div>
-          <div class="ms-2 nav-item">
-            <NuxtLink
-              class="changelang nav-link"
-              :class="{ active: store.currentLang === 'pl' }"
-              :to="switchLocalePath('pl')"
-            >
-              <img src="/images/pl.png" alt="pl" /> PL
-            </NuxtLink>
-          </div>
-        </li>
-      </ul>
+    <!-- Główna treść z klasą main-content -->
+    <div class="main-content">
+      <div class="container mt-4">
+        <slot />
+      </div>
     </div>
+
+    <!-- Stopka -->
+    <footer class="bg-dark text-white text-center py-4">
+      <div class="container">
+        <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
+        <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
+      </div>
+    </footer>
   </div>
-</nav>
-
-<div class="container mt-4">
-  <slot />
-</div>
-
-  <footer class="bg-dark text-white text-center py-4 mt-5">
-    <div class="container">
-      <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
-      <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
-    </div>
-  </footer>
-
 </template>
