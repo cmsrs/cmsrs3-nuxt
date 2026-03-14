@@ -146,7 +146,7 @@ const contact = async (event: Event) => {
             :key="image.id"
             :src="`${config.public.domain}${image.fs.medium}`"
             :alt="(store.defaultLang && image.alt[store.defaultLang]) || image.name"
-            class="mb-4"
+            class="mt-4 me-4"
           />
         </div>
       </div>

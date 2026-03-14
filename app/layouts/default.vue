@@ -14,34 +14,15 @@ const companyData = computed(() => {
 </script>
 
 <style scoped>
-/* style dla logo - zostawiamy */
 .logo {
   max-height: 40px;
   width: auto;
 }
 </style>
 
-<style>
-/* Globalne style dla całej aplikacji - umieszczamy bez scoped, aby wpłynąć na html/body */
-html, body, #__nuxt {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-.layout-wrapper {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.main-content {
-  flex: 1; /* zajmuje całą dostępną przestrzeń */
-}
-</style>
-
 <template>
-  <div class="layout-wrapper">
+  <!-- Główny kontener flex o minimalnej wysokości 100vh -->
+  <div class="d-flex flex-column min-vh-100">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="container">
         <NuxtLink class="navbar-brand" :to="homePath">
@@ -132,15 +113,15 @@ html, body, #__nuxt {
       </div>
     </nav>
 
-    <!-- Główna treść z klasą main-content -->
-    <div class="main-content">
+    <!-- Główna treść - rozciąga się, zajmując całą dostępną przestrzeń -->
+    <main class="flex-grow-1">
       <div class="container mt-4">
         <slot />
       </div>
-    </div>
+    </main>
 
-    <!-- Stopka -->
-    <footer class="bg-dark text-white text-center py-4">
+    <!-- Stopka zawsze na dole -->
+    <footer class="bg-dark text-white text-center py-4 mt-5">
       <div class="container">
         <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
         <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
