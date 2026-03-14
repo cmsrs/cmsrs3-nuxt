@@ -16,11 +16,11 @@ const inner = computed(() => response.value?.data || [])
 
 // Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
 const slider = computed(() =>
-  inner.value.find(i => i.short_title?.[store.defaultLang!] === 'main_page_slider')
+  inner.value.find(i => i.short_title?.[store.defaultLang] === 'main_page_slider')
 )
 
 const boxes = computed(() =>
-  inner.value.filter(i => i.short_title?.[store.defaultLang!]?.includes('main_page_box'))
+  inner.value.filter(i => i.short_title?.[store.defaultLang]?.includes('main_page_box'))
 )
 </script>
 
@@ -29,7 +29,7 @@ const boxes = computed(() =>
     <Slider
       v-if="slider"
       :images="slider.images || []"
-      :lang="store.currentLang || store.defaultLang || 'en'"
+      :lang="store.currentLang || store.defaultLang"
       :domain="config.public.apiBase.replace('/api/headless', '')"
     />
 

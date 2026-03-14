@@ -2,7 +2,7 @@
 const store = useAppStore()
 const { switchLocalePath } = useLocale()
 
-const lang = computed(() => store.currentLang || store.defaultLang || 'en')
+const lang = computed(() => store.currentLang || store.defaultLang)
 
 const homePath = computed(() => {
   return lang.value === store.defaultLang ? '/' : `/${lang.value}`
