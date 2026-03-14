@@ -84,31 +84,37 @@ const contact = async (event: Event) => {
       <h1 class="mb-3">{{ page.title }}</h1>
 
       <!-- Strona kontaktowa -->
-      <div v-if="page.type === 'contact'">
-        <form @submit="contact">
-          <div class="mb-4">
-            <input
-              v-model="email"
-              type="email"
-              placeholder="Your email"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <span v-if="emailErr" class="text-red-500 text-sm">{{ emailErr }}</span>
-          </div>
-          <div class="mb-6">
-            <textarea
-              v-model="message"
-              placeholder="Your message"
-              rows="8"
-              class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            ></textarea>
-            <span v-if="messageErr" class="text-red-500 text-sm">{{ messageErr }}</span>
-          </div>
-          <button type="submit" class="btn btn-secondary">
-            Send
-          </button>
-          <div v-if="messageInfo" class="mt-3 text-green-500">{{ messageInfo }}</div>
-        </form>
+      <div v-if="page.type === 'contact'" class="row">
+        <div class="col-md-8 col-lg-6">
+          <form @submit="contact">
+            <div class="mb-4">
+              <input
+                v-model="email"
+                type="email"
+                placeholder="Your email"
+                class="form-control form-control-lg"
+              />
+              <span v-if="emailErr" class="text-red-500 text-sm">{{ emailErr }}</span>
+            </div>
+            <div class="mb-4">
+              <textarea
+                v-model="message"
+                placeholder="Your message"
+                rows="8"
+                class="form-control form-control-lg"
+              ></textarea>
+              <span v-if="messageErr" class="text-red-500 text-sm">{{ messageErr }}</span>
+            </div>
+            
+            <div v-if="messageInfo" class="mb-4 alert alert-danger" role="alert">{{ messageInfo }}</div>
+            <div class="text-left">
+              <button type="submit" class="btn btn-secondary btn-lg mt-4">
+                Send
+              </button>
+            </div>
+            
+          </form>
+        </div>
       </div>
 
       <!-- Strona sklepu -->
