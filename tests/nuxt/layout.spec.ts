@@ -9,8 +9,9 @@ vi.mock('~/stores/app', () => ({
     currentLang: 'en',
     langs: ['en', 'pl'],
     menus: [],
-    init: vi.fn(),                // added
-    setCurrentLang: vi.fn(),       // added
+    innerPages: [],
+    init: vi.fn(),
+    setCurrentLang: vi.fn(),
   })
 }))
 

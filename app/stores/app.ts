@@ -9,6 +9,7 @@ export const useAppStore = defineStore('app', {
     langs: [] as string[],
     urlMap: {} as Record<string, number>,   // mapa url -> page_id
     pageUrls: {} as Record<number, Record<string, string>>,
+    innerPages: [] as any[], 
   }),
 
   actions: {
@@ -39,6 +40,7 @@ export const useAppStore = defineStore('app', {
       }
       
       await this.fetchMenus(config)
+      await this.fetchInnerPages(config) 
 
       this.initialized = true
     },
@@ -63,8 +65,17 @@ export const useAppStore = defineStore('app', {
         this.buildUrlMap()
       }
     },
+
+    async fetchInnerPages(config: ReturnType<typeof useRuntimeConfig>) {
+      const response: any = await $fetch(`${config.public.apiBase}/pages-type/inner`)
+      if (response?.success) {
+        this.innerPages = response.data
+      } else {
+        console.warn('Failed to fetch inner pages')
+      }
+    },    
     
-  buildUrlMap() {
+    buildUrlMap() {
       const urlMap: Record<string, number> = {}
       const pageUrls: Record<number, Record<string, string>> = {}
 

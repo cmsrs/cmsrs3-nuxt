@@ -11,6 +11,7 @@ vi.mock('~/stores/app', () => ({
     langs: ['en', 'pl'],
     menus: [],
     urlMap: {},
+    innerPages: [],
     init: vi.fn(),
     setCurrentLang: vi.fn(),
   })

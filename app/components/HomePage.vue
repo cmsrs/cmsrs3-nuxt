@@ -2,17 +2,11 @@
 const store = useAppStore()
 const config = useRuntimeConfig()
 
-if (!store.currentLang) {
-  await store.setCurrentLang(store.defaultLang)
-}
+//if (!store.currentLang) {
+//  await store.setCurrentLang(store.defaultLang)
+//}
 
-// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
-const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
-  `${config.public.apiBase}/pages-type/inner`
-)
-
-// Reaktywne obliczenia na podstawie danych
-const inner = computed(() => response.value?.data || [])
+const inner = computed(() => store.innerPages)
 
 // Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
 const slider = computed(() =>

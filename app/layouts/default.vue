@@ -7,6 +7,10 @@ const lang = computed(() => store.currentLang || store.defaultLang)
 const homePath = computed(() => {
   return lang.value === store.defaultLang ? '/' : `/${lang.value}`
 })
+
+const companyData = computed(() => {
+  return store.innerPages.find(p => p.short_title?.[store.defaultLang] === 'company_data')
+})
 </script>
 
 <style scoped>
@@ -110,4 +114,12 @@ const homePath = computed(() => {
 <div class="container mt-4">
   <slot />
 </div>
+
+  <footer class="bg-dark text-white text-center py-4 mt-5">
+    <div class="container">
+      <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
+      <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
+    </div>
+  </footer>
+
 </template>

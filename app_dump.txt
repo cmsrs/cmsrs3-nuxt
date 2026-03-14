@@ -102,6 +102,7 @@ export const useAppStore = defineStore('app', {
     langs: [] as string[],
     urlMap: {} as Record<string, number>,   // mapa url -> page_id
     pageUrls: {} as Record<number, Record<string, string>>,
+    innerPages: [] as any[], 
   }),
 
   actions: {
@@ -132,6 +133,7 @@ export const useAppStore = defineStore('app', {
       }
       
       await this.fetchMenus(config)
+      await this.fetchInnerPages(config) 
 
       this.initialized = true
     },
@@ -156,8 +158,17 @@ export const useAppStore = defineStore('app', {
         this.buildUrlMap()
       }
     },
+
+    async fetchInnerPages(config: ReturnType<typeof useRuntimeConfig>) {
+      const response: any = await $fetch(`${config.public.apiBase}/pages-type/inner`)
+      if (response?.success) {
+        this.innerPages = response.data
+      } else {
+        console.warn('Failed to fetch inner pages')
+      }
+    },    
     
-  buildUrlMap() {
+    buildUrlMap() {
       const urlMap: Record<string, number> = {}
       const pageUrls: Record<number, Record<string, string>> = {}
 
@@ -424,25 +435,19 @@ const modules = [Pagination]
 const store = useAppStore()
 const config = useRuntimeConfig()
 
-if (!store.currentLang) {
-  await store.setCurrentLang(store.defaultLang)
-}
+//if (!store.currentLang) {
+//  await store.setCurrentLang(store.defaultLang)
+//}
 
-// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
-const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
-  `${config.public.apiBase}/pages-type/inner`
-)
-
-// Reaktywne obliczenia na podstawie danych
-const inner = computed(() => response.value?.data || [])
+const inner = computed(() => store.innerPages)
 
 // Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
 const slider = computed(() =>
-  inner.value.find(i => i.short_title?.[store.defaultLang!] === 'main_page_slider')
+  inner.value.find(i => i.short_title?.[store.defaultLang] === 'main_page_slider')
 )
 
 const boxes = computed(() =>
-  inner.value.filter(i => i.short_title?.[store.defaultLang!]?.includes('main_page_box'))
+  inner.value.filter(i => i.short_title?.[store.defaultLang]?.includes('main_page_box'))
 )
 </script>
 
@@ -451,7 +456,7 @@ const boxes = computed(() =>
     <Slider
       v-if="slider"
       :images="slider.images || []"
-      :lang="store.currentLang || store.defaultLang || 'en'"
+      :lang="store.currentLang || store.defaultLang"
       :domain="config.public.apiBase.replace('/api/headless', '')"
     />
 
@@ -494,10 +499,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 const store = useAppStore()
 const { switchLocalePath } = useLocale()
 
-const lang = computed(() => store.currentLang || store.defaultLang || 'en')
+const lang = computed(() => store.currentLang || store.defaultLang)
 
 const homePath = computed(() => {
   return lang.value === store.defaultLang ? '/' : `/${lang.value}`
+})
+
+const companyData = computed(() => {
+  return store.innerPages.find(p => p.short_title?.[store.defaultLang] === 'company_data')
 })
 </script>
 
@@ -602,6 +611,14 @@ const homePath = computed(() => {
 <div class="container mt-4">
   <slot />
 </div>
+
+  <footer class="bg-dark text-white text-center py-4 mt-5">
+    <div class="container">
+      <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
+      <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
+    </div>
+  </footer>
+
 </template>
 === TREE TESTS ===
 tests
@@ -682,8 +699,9 @@ vi.mock('~/stores/app', () => ({
     currentLang: 'en',
     langs: ['en', 'pl'],
     menus: [],
-    init: vi.fn(),                // added
-    setCurrentLang: vi.fn(),       // added
+    innerPages: [],
+    init: vi.fn(),
+    setCurrentLang: vi.fn(),
   })
 }))
 
@@ -825,6 +843,7 @@ vi.mock('~/stores/app', () => ({
     langs: ['en', 'pl'],
     menus: [],
     urlMap: {},
+    innerPages: [],
     init: vi.fn(),
     setCurrentLang: vi.fn(),
   })
@@ -888,145 +907,99 @@ export default defineNuxtConfig({
 })
 === GIT DIFF (ostatnie zmiany) ===
 diff --git a/app/components/HomePage.vue b/app/components/HomePage.vue
-index b0b3a02..e821d15 100644
+index 8f90935..c7ac118 100644
 --- a/app/components/HomePage.vue
 +++ b/app/components/HomePage.vue
-@@ -1,15 +1,9 @@
- <script setup lang="ts">
--console.log('0000000000000000111')
+@@ -2,17 +2,11 @@
  const store = useAppStore()
  const config = useRuntimeConfig()
  
--// Upewniamy się, że store jest zainicjowany i currentLang ustawiony
--//if (!store.initialized) {
--//  await store.init()
--//}
+-if (!store.currentLang) {
+-  await store.setCurrentLang(store.defaultLang)
+-}
++//if (!store.currentLang) {
++//  await store.setCurrentLang(store.defaultLang)
++//}
+ 
+-// Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
+-const { data: response } = await useFetch<{ success: boolean; data: any[] }>(
+-  `${config.public.apiBase}/pages-type/inner`
+-)
 -
- if (!store.currentLang) {
--  await store.setCurrentLang(store.defaultLang || 'en')
-+  await store.setCurrentLang(store.defaultLang)
- }
+-// Reaktywne obliczenia na podstawie danych
+-const inner = computed(() => response.value?.data || [])
++const inner = computed(() => store.innerPages)
  
- // Pobieramy dane z API – zwraca wszystkie strony typu 'inner'
-diff --git a/app/composables/useLocale.ts b/app/composables/useLocale.ts
-index 6e57783..e33fab2 100644
---- a/app/composables/useLocale.ts
-+++ b/app/composables/useLocale.ts
-@@ -6,8 +6,20 @@ export const useLocale = () => {
-   const switchLocalePath = (locale: string): string => {
-     const currentPath = route.path
- 
-+    if(! store.langs.includes(locale)) {
-+      console.warn(`[useLocale] No locale found for ${locale}`)
-+      return '/'
-+    }
-+    const pathParts = currentPath.split('/').filter(Boolean)
-+    const firstSegment = pathParts[0] || ''
-+    
-+
-     // Strona główna
--    if (currentPath === '/' || currentPath === '/en' || currentPath === '/pl') {
-+    const isHome = currentPath === '/'
-+    const isRoot = pathParts.length === 0 || 
-+                   (pathParts.length === 1 && store.langs.includes(firstSegment))
-+
-+    if (isHome || isRoot) {
-       return locale === store.defaultLang ? '/' : `/${locale}`
-     }
- 
-diff --git a/app/middleware/i18n.global.ts b/app/middleware/i18n.global.ts
-index f41aa9c..dc9a93a 100644
---- a/app/middleware/i18n.global.ts
-+++ b/app/middleware/i18n.global.ts
-@@ -5,16 +5,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
- 
-   // Przypadek strony głównej "/"
-   if (segments.length === 0) {
--    await store.setCurrentLang(store.defaultLang || 'en')
-+    await store.setCurrentLang(store.defaultLang)
-     return // Zakończ middleware tutaj
-   }
- 
--  const firstSegment = segments[0] || store.defaultLang || 'en'
--  if (['pl', 'en'].includes(firstSegment)) {
-+  const firstSegment = segments[0] || store.defaultLang
-+  if ( store.langs.includes(firstSegment)) {
-     await store.setCurrentLang(firstSegment)
-   } else {
--    // Jeśli ktoś wejdzie na /kontakt, a nie ma prefixu, 
--    // ustaw domyślny, ale nie rób nieskończonego przekierowania
--    await store.setCurrentLang(store.defaultLang || 'en')
-+    await store.setCurrentLang(store.defaultLang)
-   }
+ // Używamy domyślnego języka do identyfikacji, bo short_title w domyślnym języku jest stały
+ const slider = computed(() =>
+diff --git a/app/layouts/default.vue b/app/layouts/default.vue
+index 4efb883..3e68715 100644
+--- a/app/layouts/default.vue
++++ b/app/layouts/default.vue
+@@ -7,6 +7,10 @@ const lang = computed(() => store.currentLang || store.defaultLang)
+ const homePath = computed(() => {
+   return lang.value === store.defaultLang ? '/' : `/${lang.value}`
  })
-\ No newline at end of file
-diff --git a/app/pages/[...slug].vue b/app/pages/[...slug].vue
-index 5b7f57e..03489e0 100644
---- a/app/pages/[...slug].vue
-+++ b/app/pages/[...slug].vue
-@@ -6,15 +6,19 @@ const route = useRoute()
- 
- // Pobierz język z URL
- const currentUrl = route.path
--const segments = currentUrl.split('/').filter(Boolean)
--const langFromUrl = (segments[0] === 'pl' || segments[0] === 'en') ? segments[0] : (store.defaultLang || 'en')
-+const firstSegment = route.path.split('/')[1] || ''
 +
-+let langFromUrl = store.defaultLang
++const companyData = computed(() => {
++  return store.innerPages.find(p => p.short_title?.[store.defaultLang] === 'company_data')
++})
+ </script>
+ 
+ <style scoped>
+@@ -110,4 +114,12 @@ const homePath = computed(() => {
+ <div class="container mt-4">
+   <slot />
+ </div>
 +
-+if (firstSegment && store.langs.includes(firstSegment)) {
-+  langFromUrl = firstSegment
-+}
- 
--// WAŻNE: Wymuszenie załadowania menu dla konkretnego języka
- await store.setCurrentLang(langFromUrl)
- 
--console.log('jestem!!!!!!!!!!!!');
- // 5. Sprawdź, czy to strona główna
--const isHome = currentUrl === '/' || currentUrl === '/en' || currentUrl === '/pl'
-+const isHome =
-+  currentUrl === '/' || store.langs.some(lang => currentUrl === `/${lang}`)
- 
- // Znajdź pageId
- const normalisedUrl = currentUrl.replace(/\/$/, '') || '/'
-diff --git a/app/plugins/init-store.ts b/app/plugins/init-store.ts
-index 7f4fd73..dde849f 100644
---- a/app/plugins/init-store.ts
-+++ b/app/plugins/init-store.ts
-@@ -3,7 +3,5 @@ import { defineNuxtPlugin } from '#app'
- 
- export default defineNuxtPlugin(async () => {
-   const store = useAppStore()
--  console.log('Plugin: initialising store...')
-   await store.init()
--  console.log('Plugin: store initialised')
- })
++  <footer class="bg-dark text-white text-center py-4 mt-5">
++    <div class="container">
++      <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
++      <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
++    </div>
++  </footer>
++
+ </template>
 \ No newline at end of file
 diff --git a/app/stores/app.ts b/app/stores/app.ts
-index e825e5b..0615bf2 100644
+index 0615bf2..bba6add 100644
 --- a/app/stores/app.ts
 +++ b/app/stores/app.ts
-@@ -2,10 +2,10 @@ import { defineStore } from 'pinia'
- 
- export const useAppStore = defineStore('app', {
-   state: () => ({
--    defaultLang: null as string | null,
-+    defaultLang: '' as string,
-     initialized: false,
-     menus: [] as any[],
--    currentLang: null as string | null,
-+    currentLang: '' as string,
+@@ -9,6 +9,7 @@ export const useAppStore = defineStore('app', {
      langs: [] as string[],
      urlMap: {} as Record<string, number>,   // mapa url -> page_id
      pageUrls: {} as Record<number, Record<string, string>>,
-@@ -39,7 +39,6 @@ export const useAppStore = defineStore('app', {
++    innerPages: [] as any[], 
+   }),
+ 
+   actions: {
+@@ -39,6 +40,7 @@ export const useAppStore = defineStore('app', {
        }
        
        await this.fetchMenus(config)
--      console.log('koniec init')
++      await this.fetchInnerPages(config) 
  
        this.initialized = true
      },
+@@ -63,8 +65,17 @@ export const useAppStore = defineStore('app', {
+         this.buildUrlMap()
+       }
+     },
++
++    async fetchInnerPages(config: ReturnType<typeof useRuntimeConfig>) {
++      const response: any = await $fetch(`${config.public.apiBase}/pages-type/inner`)
++      if (response?.success) {
++        this.innerPages = response.data
++      } else {
++        console.warn('Failed to fetch inner pages')
++      }
++    },    
+     
+-  buildUrlMap() {
++    buildUrlMap() {
+       const urlMap: Record<string, number> = {}
+       const pageUrls: Record<number, Record<string, string>> = {}
+ 
 
 > test:run
 > vitest run
@@ -1034,26 +1007,25 @@ index e825e5b..0615bf2 100644
 
 [1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/home/rob/js/cmsrs3-nuxt[39m
 
+[90mstdout[2m | tests/nuxt/index.test.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 262[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/slug.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/index.test.ts
+[90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
 [90mstdout[2m | tests/nuxt/useLocale.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 381[2mms[22m[39m
-[90mstdout[2m | tests/nuxt/layout.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
-
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 175[2mms[22m[39m
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 253[2mms[22m[39m
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 531[2mms[22m[39m
-     [33m[2m✓[22m[39m renders without crashing [33m 382[2mms[22m[39m
+ [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 390[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 293[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 284[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 14:20:28
-[2m   Duration [22m 1.38s[2m (transform 1.17s, setup 347ms, import 1.24s, tests 1.34s, environment 1.00s)[22m
+[2m   Start at [22m 19:36:54
+[2m   Duration [22m 1.05s[2m (transform 1.16s, setup 271ms, import 1.02s, tests 1.23s, environment 1.08s)[22m
 
