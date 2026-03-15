@@ -1,7 +1,18 @@
 // tests/nuxt/index.test.ts
 import { describe, it, expect, vi } from 'vitest'
-import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { mountSuspended, registerEndpoint, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import IndexPage from '~/pages/index.vue'
+
+// Mock useRuntimeConfig to use relative API base
+mockNuxtImport('useRuntimeConfig', () => {
+  return () => ({
+    public: {
+      domain: '',
+      apiBase: '/api/headless'
+    },
+    app: { baseURL: '/' }
+  })
+})
 
 vi.mock('~/stores/app', () => ({
   useAppStore: () => ({

@@ -944,8 +944,19 @@ describe('Slug page', () => {
 ===== tests/nuxt/index.test.ts =====
 // tests/nuxt/index.test.ts
 import { describe, it, expect, vi } from 'vitest'
-import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { mountSuspended, registerEndpoint, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import IndexPage from '~/pages/index.vue'
+
+// Mock useRuntimeConfig to use relative API base
+mockNuxtImport('useRuntimeConfig', () => {
+  return () => ({
+    public: {
+      domain: '',
+      apiBase: '/api/headless'
+    },
+    app: { baseURL: '/' }
+  })
+})
 
 vi.mock('~/stores/app', () => ({
   useAppStore: () => ({
@@ -1041,29 +1052,27 @@ export default defineNuxtConfig({
 
 [1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/home/rob/js/cmsrs3-nuxt[39m
 
-[90mstdout[2m | tests/nuxt/slug.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
-
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
+[90mstdout[2m | tests/nuxt/slug.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 162[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/useLocale.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 169[2mms[22m[39m
- [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 364[2mms[22m[39m
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 283[2mms[22m[39m
- [31m❯[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 195[2mms[22m[39m
-[31m     [31m×[31m renders without crashing[39m[32m 39[2mms[22m[39m
+ [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 351[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 175[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 289[2mms[22m[39m
 
-[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
-[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (6)[39m
-[2m     Errors [22m [1m[31m1 error[39m[22m
-[2m   Start at [22m 20:11:59
-[2m   Duration [22m 1.05s[2m (transform 1.24s, setup 371ms, import 1.30s, tests 1.01s, environment 1.03s)[22m
+[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
+[2m   Start at [22m 20:13:57
+[2m   Duration [22m 1.03s[2m (transform 1.27s, setup 330ms, import 1.29s, tests 978ms, environment 1.01s)[22m
 
 ==npx nuxi generate==
 ┌  Building Nuxt for production...
@@ -1093,102 +1102,102 @@ export default defineNuxtConfig({
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BWtNdXKx.js               5.35 kB │ gzip:  2.11 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/Cs84Sti2.js              99.66 kB │ gzip: 30.06 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/DLUjesny.js             195.50 kB │ gzip: 73.65 kB
-ℹ ✓ built in 1.97s
-✔ Client built in 1974ms
+ℹ ✓ built in 1.88s
+✔ Client built in 1891ms
 ℹ Building server...
 ℹ vite v7.3.1 building ssr environment for production...
 ℹ transforming...
 ℹ ✓ 112 modules transformed.
 ℹ rendering chunks...
-ℹ ✓ built in 765ms
-✔ Server built in 771ms
+ℹ ✓ built in 688ms
+✔ Server built in 694ms
 [nitro] ℹ Initializing prerenderer
 [nitro] ℹ Prerendering 3 initial routes with crawler
-[nitro]   ├─ /200.html (28ms)
-[nitro]   ├─ /404.html (28ms)
-[nitro]   ├─ / (268ms)
-[nitro]   ├─ /_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (9ms) (skipped)
+[nitro]   ├─ /200.html (33ms)
+[nitro]   ├─ /404.html (33ms)
+[nitro]   ├─ / (528ms)
+[nitro]   ├─ /_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (9ms) (skipped)
 [nitro]   ├─ /_payload.json (9ms)
-[nitro]   ├─ /en/o/contact-me (203ms)
-[nitro]   ├─ /en/o/contact-me/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (2ms) (skipped)
-[nitro]   ├─ /en/o/contact-me/_payload.json (2ms)
-[nitro]   ├─ /pl (308ms)
-[nitro]   ├─ /pl/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (4ms) (skipped)
-[nitro]   ├─ /pl/_payload.json (5ms)
-[nitro]   ├─ /en/cms/about/about-page (402ms)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /pl (327ms)
+[nitro]   ├─ /pl/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (6ms) (skipped)
+[nitro]   ├─ /pl/_payload.json (6ms)
+[nitro]   ├─ /en/o/contact-me (408ms)
+[nitro]   ├─ /en/o/contact-me/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /en/o/contact-me/_payload.json (1ms)
+[nitro]   ├─ /en/cms/about/about-page (619ms)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
 [nitro]   ├─ /en/cms/about/about-page/_payload.json (1ms)
-[nitro]   ├─ /en/cms/about/about-me (593ms)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
-[nitro]   ├─ /en/cms/books/it-books (594ms)
-[nitro]   ├─ /en/cms/books/it-books/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json (0ms)
-[nitro]   ├─ /en/cms/books/it-books/_payload.json (1ms)
-[nitro]   ├─ /en/cms/gallery/greece (690ms)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/java (990ms)
-[nitro]   ├─ /en/cms/books/java/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/java/_payload.json (1ms)
-[nitro]   ├─ /en/cms/gallery/poland (1004ms)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-me (707ms)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json (1ms)
+[nitro]   ├─ /en/cms/gallery/greece (811ms)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/poland (812ms)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json (0ms)
 [nitro]   ├─ /en/cms/gallery/poland/_payload.json (0ms)
-[nitro]   ├─ /en/cms/books/php (1088ms)
-[nitro]   ├─ /en/cms/books/php/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/man (1091ms)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/man (1114ms)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/php (1116ms)
+[nitro]   ├─ /en/cms/books/php/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/it-books (1116ms)
+[nitro]   ├─ /en/cms/books/it-books/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json (0ms)
 [nitro]   ├─ /en/cms/books/php/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/woman (1196ms)
-[nitro]   ├─ /en/cms/clothes/woman/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/sox (1196ms)
-[nitro]   ├─ /en/cms/clothes/sox/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/it-books/_payload.json (1ms)
+[nitro]   ├─ /en/cms/clothes/woman (1210ms)
+[nitro]   ├─ /en/cms/clothes/woman/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
 [nitro]   ├─ /en/cms/clothes/woman/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/sox/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (976ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/english (1298ms)
-[nitro]   ├─ /en/cms/books/english/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/grecja (988ms)
-[nitro]   ├─ /pl/cms/galeria/polska (984ms)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (2ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/java (990ms)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (2ms)
+[nitro]   ├─ /en/cms/clothes/sox (1307ms)
+[nitro]   ├─ /en/cms/clothes/sox/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (3ms) (skipped)
+[nitro]   ├─ /en/cms/books/java (1312ms)
+[nitro]   ├─ /en/cms/books/java/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/sox/_payload.json (3ms)
+[nitro]   ├─ /en/cms/books/java/_payload.json (1ms)
+[nitro]   ├─ /pl/o/kontakt (1083ms)
+[nitro]   ├─ /en/cms/books/english (1416ms)
+[nitro]   ├─ /pl/o/kontakt/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (2ms) (skipped)
+[nitro]   ├─ /en/cms/books/english/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/php (1089ms)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie (1086ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /pl/o/kontakt/_payload.json (2ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie (1088ms)
 [nitro]   ├─ /en/cms/books/english/_payload.json (1ms)
-[nitro]   ├─ /pl/o/kontakt (1100ms)
-[nitro]   ├─ /pl/o/kontakt/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (2ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie (996ms)
-[nitro]   ├─ /pl/cms/galeria/polska/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie (1001ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta (998ms)
-[nitro]   ├─ /pl/cms/ksiazki/php (1002ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (1ms)
-[nitro]   ├─ /pl/o/kontakt/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/grecja (1092ms)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (1095ms)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna (1096ms)
+[nitro]   ├─ /pl/cms/galeria/polska (1092ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery (1094ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (2ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
 [nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna (1080ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (2ms)
 [nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery (1084ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
 [nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski (1090ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/polska/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/java (1185ms)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/kobieta (1184ms)
+[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski (1195ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?01f112f1-9724-4fd5-84fb-0f9b1d4e2250 (1ms) (skipped)
 [nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json (0ms)
-[nitro] ℹ Prerendered 54 routes in 2.209 seconds
+[nitro] ℹ Prerendered 54 routes in 2.518 seconds
 [nitro] ✔ Generated public .output/public
 [nitro] ✔ You can preview this build using npx serve .output/public
 │
 └  ✨ You can now deploy .output/public to any static hosting!
 ==ts-node generate-sitemap.ts==
-[dotenv@17.3.1] injecting env (2) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.3.1] injecting env (2) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
 ✅ Sitemap generated in .output/public/sitemap.xml
