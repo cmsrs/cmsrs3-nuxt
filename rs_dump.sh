@@ -38,6 +38,9 @@ echo "==npx nuxi generate==" >> app_dump.txt
 npx nuxi generate >>  app_dump.txt
 
 
+echo "==ts-node generate-sitemap.ts==" >> app_dump.txt
+ts-node generate-sitemap.ts >> app_dump.txt
 
-# ta linia jest na koncu
+# ta linia jest na koncu !!!!!!!!!!
 cat app_dump.txt
+

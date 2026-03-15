@@ -89,26 +89,24 @@ const companyData = computed(() => {
 
           <ul class="nav navbar-nav ms-auto">
             <li class="d-flex flex-row">
-              <div class="ms-2 nav-item">
+              <div
+                v-for="langCode in store.langs"
+                :key="langCode"
+                class="ms-2 nav-item"
+              >
                 <NuxtLink
                   class="changelang nav-link"
-                  :class="{ active: store.currentLang === 'en' }"
-                  :to="switchLocalePath('en')"
+                  :class="{ active: store.currentLang === langCode }"
+                  :to="switchLocalePath(langCode)"
                 >
-                  <img src="/images/en.png" alt="en" /> EN
-                </NuxtLink>
-              </div>
-              <div class="ms-2 nav-item">
-                <NuxtLink
-                  class="changelang nav-link"
-                  :class="{ active: store.currentLang === 'pl' }"
-                  :to="switchLocalePath('pl')"
-                >
-                  <img src="/images/pl.png" alt="pl" /> PL
+                  <img :src="`/images/${langCode}.png`" :alt="langCode" />
+                  {{ langCode.toUpperCase() }}
                 </NuxtLink>
               </div>
             </li>
           </ul>
+
+
         </div>
       </div>
     </nav>

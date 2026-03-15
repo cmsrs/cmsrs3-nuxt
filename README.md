@@ -18,6 +18,19 @@ NUXT_PUBLIC_DOMAIN=http://headless-api.example.com
 
 This variable is used by the application to communicate with the CMS API.
 
+Nuxt page:
+
+```
+DOMAIN=http://nuxt.example.com
+```
+
+Production build and create sitemap
+
+```
+npx nuxi generate
+ts-node generate-sitemap.ts
+```
+
 ## More information
 
 For more details about the CMS, visit:

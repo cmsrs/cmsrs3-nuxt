@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const store = useAppStore()
+const { fetchApi } = useApi()
 const config = useRuntimeConfig()
+
 
 const inner = computed(() => store.innerPages)
 
@@ -12,6 +14,13 @@ const boxes = computed(() =>
   inner.value.filter(i => i.short_title?.[store.defaultLang]?.includes('main_page_box'))
 )
 
+const lang = computed(() => store.currentLang || store.defaultLang)
+
+// Pobranie strony głównej z API
+const data = await fetchApi<any[]>(`${config.public.apiBase}/pages-type/main_page`)
+const homePageData = data?.[0] || null
+
+
 // Komunikat demo w zależności od języka
 const demoAlertMessage = computed(() => {
   return store.currentLang === 'pl'
@@ -22,6 +31,9 @@ const demoAlertMessage = computed(() => {
 
 <template>
   <div>
+
+    <h1>{{ homePageData.title?.[lang] }}</h1>
+
     <!-- Alert demo -->
     <div class="alert alert-danger" role="alert">
       {{ demoAlertMessage }}
