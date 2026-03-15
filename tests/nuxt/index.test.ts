@@ -12,10 +12,25 @@ vi.mock('~/stores/app', () => ({
     menus: [],
     urlMap: {},
     innerPages: [],
+    pageUrls: {
+      1: { en: '/', pl: '/pl' } // home page URLs
+    },
     init: vi.fn(),
     setCurrentLang: vi.fn(),
   })
 }))
+
+// Mock main page API
+registerEndpoint('/api/headless/pages-type/main_page', {
+  handler: () => ({
+    success: true,
+    data: [{
+      id: 1,
+      title: { en: 'Home', pl: 'Strona główna' },
+      description: { en: 'Home page', pl: 'Strona główna' },
+    }]
+  })
+})
 
 registerEndpoint('/api/headless/pages-type/inner', {
   handler: () => ({

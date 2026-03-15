@@ -249,6 +249,31 @@ if (!isHome && pageId) {
   const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
   if (!pageResponse?.success) throw createError({ statusCode: 404 })
   page = pageResponse.data
+
+  const pageUrl = store.pageUrls[pageId]
+  useHead({
+    title: page.title,
+    meta: [
+      {
+        name: 'description',
+        content: page.description || page.title
+      }
+    ],
+    link: [
+      {
+        rel: 'canonical',
+        href: config.public.domain + (pageUrl?.[store.currentLang])
+      },
+      ...(store.langs.length > 1
+        ? store.langs.map(lang => ({
+            rel: 'alternate',
+            hreflang: lang,
+            href: config.public.domain + (pageUrl?.[lang])
+          }))
+        : [])
+    ]  
+  })
+
 }
 
 // Komunikat productTestInfo w zależności od języka
@@ -454,7 +479,9 @@ const modules = [Pagination]
 ===== app/components/HomePage.vue =====
 <script setup lang="ts">
 const store = useAppStore()
+const { fetchApi } = useApi()
 const config = useRuntimeConfig()
+
 
 const inner = computed(() => store.innerPages)
 
@@ -466,6 +493,41 @@ const boxes = computed(() =>
   inner.value.filter(i => i.short_title?.[store.defaultLang]?.includes('main_page_box'))
 )
 
+const lang = computed(() => store.currentLang || store.defaultLang)
+
+// Pobranie strony głównej z API
+const data = await fetchApi<any[]>(`${config.public.apiBase}/pages-type/main_page`)
+const homePageData = data?.[0] || null
+
+
+if(homePageData.id){
+  const pageUrl = store.pageUrls[homePageData.id]
+  useHead({
+    title: homePageData.title?.[store.currentLang],
+    meta: [
+      {
+        name: 'description',
+        content: homePageData.description?.[store.currentLang] || homePageData.title?.[store.currentLang]
+      }
+    ],
+    link: [
+      {
+        rel: 'canonical',
+        href: config.public.domain + (pageUrl?.[store.currentLang])
+      },
+      ...(store.langs.length > 1
+        ? store.langs.map(lang => ({
+            rel: 'alternate',
+            hreflang: lang,
+            href: config.public.domain + (pageUrl?.[lang])
+          }))
+        : [])
+    ]  
+  })
+}
+
+
+
 // Komunikat demo w zależności od języka
 const demoAlertMessage = computed(() => {
   return store.currentLang === 'pl'
@@ -476,8 +538,11 @@ const demoAlertMessage = computed(() => {
 
 <template>
   <div>
+
+    <h1>{{ homePageData.title?.[lang] }}</h1>
+
     <!-- Alert demo -->
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger mt-4 mb-4" role="alert">
       {{ demoAlertMessage }}
     </div>
 
@@ -490,7 +555,7 @@ const demoAlertMessage = computed(() => {
 
     <div class="row mt-4">
       <div v-for="box in boxes" :key="box.id" class="col-md-4">
-        <div class="card p-3 mb-3" v-html="box.content?.[store.currentLang!]"></div>
+        <div class="card p-3 mb-3" v-html="box.content?.[lang]"></div>
       </div>
     </div>
   </div>
@@ -760,7 +825,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, registerEndpoint, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import SlugPage from '~/pages/[...slug].vue'
 
-// Mock useRuntimeConfig – ustawiamy apiBase na względny
+// Mock useRoute to return the path from the test
+let mockRoutePath = '/en/cms/about/about-me'
+mockNuxtImport('useRoute', () => {
+  return () => ({
+    get path() { return mockRoutePath }
+  })
+})
+
+// Mock useRuntimeConfig
 mockNuxtImport('useRuntimeConfig', () => {
   return () => ({
     public: {
@@ -771,7 +844,7 @@ mockNuxtImport('useRuntimeConfig', () => {
   })
 })
 
-// Mock store (bez zmian)
+// Mock store with all necessary data
 const mockStore = {
   initialized: true,
   defaultLang: 'en',
@@ -797,6 +870,12 @@ const mockStore = {
     '/en/cms/about/about-me': 7,
     '/pl/cms/o-mnie/o-mnie': 7
   },
+  pageUrls: {
+    7: {
+      en: '/en/cms/about/about-me',
+      pl: '/pl/cms/o-mnie/o-mnie'
+    }
+  },
   init: vi.fn(),
   setCurrentLang: vi.fn((lang) => { mockStore.currentLang = lang }),
   fetchMenus: vi.fn(),
@@ -807,7 +886,7 @@ vi.mock('~/stores/app', () => ({
   useAppStore: () => mockStore
 }))
 
-// Rejestracja endpointów API – pełna ścieżka względna
+// Register page API endpoints
 registerEndpoint('/api/headless/page/7/en', {
   handler: () => ({
     success: true,
@@ -841,8 +920,9 @@ describe('Slug page', () => {
   })
 
   it('renders the correct page for /en/cms/about/about-me', async () => {
+    mockRoutePath = '/en/cms/about/about-me'
     const wrapper = await mountSuspended(SlugPage, {
-      route: '/en/cms/about/about-me'
+      route: mockRoutePath
     })
 
     expect(mockStore.setCurrentLang).toHaveBeenCalledWith('en')
@@ -851,8 +931,9 @@ describe('Slug page', () => {
   })
 
   it('renders the correct page for /pl/cms/o-mnie/o-mnie', async () => {
+    mockRoutePath = '/pl/cms/o-mnie/o-mnie'
     const wrapper = await mountSuspended(SlugPage, {
-      route: '/pl/cms/o-mnie/o-mnie'
+      route: mockRoutePath
     })
 
     expect(mockStore.setCurrentLang).toHaveBeenCalledWith('pl')
@@ -875,10 +956,25 @@ vi.mock('~/stores/app', () => ({
     menus: [],
     urlMap: {},
     innerPages: [],
+    pageUrls: {
+      1: { en: '/', pl: '/pl' } // home page URLs
+    },
     init: vi.fn(),
     setCurrentLang: vi.fn(),
   })
 }))
+
+// Mock main page API
+registerEndpoint('/api/headless/pages-type/main_page', {
+  handler: () => ({
+    success: true,
+    data: [{
+      id: 1,
+      title: { en: 'Home', pl: 'Strona główna' },
+      description: { en: 'Home page', pl: 'Strona główna' },
+    }]
+  })
+})
 
 registerEndpoint('/api/headless/pages-type/inner', {
   handler: () => ({
@@ -937,48 +1033,6 @@ export default defineNuxtConfig({
   }
 })
 === GIT DIFF (ostatnie zmiany) ===
-diff --git a/app/layouts/default.vue b/app/layouts/default.vue
-index b592cab..7e4b19e 100644
---- a/app/layouts/default.vue
-+++ b/app/layouts/default.vue
-@@ -89,26 +89,24 @@ const companyData = computed(() => {
- 
-           <ul class="nav navbar-nav ms-auto">
-             <li class="d-flex flex-row">
--              <div class="ms-2 nav-item">
--                <NuxtLink
--                  class="changelang nav-link"
--                  :class="{ active: store.currentLang === 'en' }"
--                  :to="switchLocalePath('en')"
--                >
--                  <img src="/images/en.png" alt="en" /> EN
--                </NuxtLink>
--              </div>
--              <div class="ms-2 nav-item">
-+              <div
-+                v-for="langCode in store.langs"
-+                :key="langCode"
-+                class="ms-2 nav-item"
-+              >
-                 <NuxtLink
-                   class="changelang nav-link"
--                  :class="{ active: store.currentLang === 'pl' }"
--                  :to="switchLocalePath('pl')"
-+                  :class="{ active: store.currentLang === langCode }"
-+                  :to="switchLocalePath(langCode)"
-                 >
--                  <img src="/images/pl.png" alt="pl" /> PL
-+                  <img :src="`/images/${langCode}.png`" :alt="langCode" />
-+                  {{ langCode.toUpperCase() }}
-                 </NuxtLink>
-               </div>
-             </li>
-           </ul>
-+
-+
-         </div>
-       </div>
-     </nav>
 ==npm run test:run==
 
 > test:run
@@ -987,27 +1041,29 @@ index b592cab..7e4b19e 100644
 
 [1m[46m RUN [49m[22m [36mv4.1.0 [39m[90m/home/rob/js/cmsrs3-nuxt[39m
 
-[90mstdout[2m | tests/nuxt/index.test.ts
+[90mstdout[2m | tests/nuxt/slug.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/slug.spec.ts
+[90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
 [90mstdout[2m | tests/nuxt/useLocale.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 334[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 276[2mms[22m[39m
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 295[2mms[22m[39m
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 295[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 169[2mms[22m[39m
+ [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 364[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 283[2mms[22m[39m
+ [31m❯[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 195[2mms[22m[39m
+[31m     [31m×[31m renders without crashing[39m[32m 39[2mms[22m[39m
 
-[2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
-[2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 18:57:22
-[2m   Duration [22m 1.04s[2m (transform 1.38s, setup 285ms, import 1.17s, tests 1.20s, environment 994ms)[22m
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (6)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 20:11:59
+[2m   Duration [22m 1.05s[2m (transform 1.24s, setup 371ms, import 1.30s, tests 1.01s, environment 1.03s)[22m
 
 ==npx nuxi generate==
 ┌  Building Nuxt for production...
@@ -1018,121 +1074,121 @@ index b592cab..7e4b19e 100644
 ℹ Building client...
 ℹ vite v7.3.1 building client environment for production...
 ℹ transforming...
-ℹ ✓ 223 modules transformed.
+ℹ ✓ 224 modules transformed.
 ℹ rendering chunks...
 ℹ computing gzip size...
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/manifest.json                   2.69 kB │ gzip:  0.55 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/manifest.json                   2.76 kB │ gzip:  0.55 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/default.BBcCmRwT.css      0.05 kB │ gzip:  0.07 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/_...DhF300iu.css          0.06 kB │ gzip:  0.08 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/_...IxdLNrrL.css          0.06 kB │ gzip:  0.08 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/HomePage.CHLJ16fM.css     0.24 kB │ gzip:  0.17 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/error-500.DBWf9FGj.css    1.91 kB │ gzip:  0.73 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/error-404.C-Ezrlz-.css    2.43 kB │ gzip:  0.86 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/entry.CcGnPmdx.css      235.90 kB │ gzip: 32.33 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/k_WU54k2.js               0.19 kB │ gzip:  0.16 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CF3UhE-3.js               0.33 kB │ gzip:  0.24 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/D1D5EhLq.js               3.14 kB │ gzip:  1.49 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/B7tYJ3gT.js               3.48 kB │ gzip:  1.56 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/DfOpzpuI.js               3.59 kB │ gzip:  1.71 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CzVeO_kS.js               3.79 kB │ gzip:  1.71 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/ZRVU9l9b.js               5.35 kB │ gzip:  2.11 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CfCQSDyl.js              98.92 kB │ gzip: 29.71 kB
-ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/D9PvxoZI.js             195.49 kB │ gzip: 73.64 kB
-ℹ ✓ built in 1.83s
-✔ Client built in 1840ms
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/2xuX_8CL.js               0.21 kB │ gzip:  0.18 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CuZXlZPh.js               0.33 kB │ gzip:  0.24 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BEa1lxCm.js               3.15 kB │ gzip:  1.49 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BmEOEtq2.js               3.48 kB │ gzip:  1.56 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CLpE1iQa.js               3.79 kB │ gzip:  1.71 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/Dr4beoh1.js               3.89 kB │ gzip:  1.84 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/BWtNdXKx.js               5.35 kB │ gzip:  2.11 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/Cs84Sti2.js              99.66 kB │ gzip: 30.06 kB
+ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/DLUjesny.js             195.50 kB │ gzip: 73.65 kB
+ℹ ✓ built in 1.97s
+✔ Client built in 1974ms
 ℹ Building server...
 ℹ vite v7.3.1 building ssr environment for production...
 ℹ transforming...
-ℹ ✓ 111 modules transformed.
+ℹ ✓ 112 modules transformed.
 ℹ rendering chunks...
-ℹ ✓ built in 728ms
-✔ Server built in 733ms
+ℹ ✓ built in 765ms
+✔ Server built in 771ms
 [nitro] ℹ Initializing prerenderer
 [nitro] ℹ Prerendering 3 initial routes with crawler
-[nitro]   ├─ /200.html (27ms)
+[nitro]   ├─ /200.html (28ms)
 [nitro]   ├─ /404.html (28ms)
-[nitro]   ├─ / (474ms)
-[nitro]   ├─ /_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (8ms) (skipped)
-[nitro]   ├─ /_payload.json (8ms)
-[nitro]   ├─ /en/o/contact-me (305ms)
-[nitro]   ├─ /en/o/contact-me/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
+[nitro]   ├─ / (268ms)
+[nitro]   ├─ /_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (9ms) (skipped)
+[nitro]   ├─ /_payload.json (9ms)
+[nitro]   ├─ /en/o/contact-me (203ms)
+[nitro]   ├─ /en/o/contact-me/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (2ms) (skipped)
 [nitro]   ├─ /en/o/contact-me/_payload.json (2ms)
-[nitro]   ├─ /pl (403ms)
-[nitro]   ├─ /pl/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (4ms) (skipped)
-[nitro]   ├─ /pl/_payload.json (4ms)
-[nitro]   ├─ /en/cms/about/about-me (502ms)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
+[nitro]   ├─ /pl (308ms)
+[nitro]   ├─ /pl/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (4ms) (skipped)
+[nitro]   ├─ /pl/_payload.json (5ms)
+[nitro]   ├─ /en/cms/about/about-page (402ms)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json (1ms)
+[nitro]   ├─ /en/cms/about/about-me (593ms)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/it-books (594ms)
+[nitro]   ├─ /en/cms/books/it-books/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
 [nitro]   ├─ /en/cms/about/about-me/_payload.json (0ms)
-[nitro]   ├─ /en/cms/about/about-page (703ms)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/greece (704ms)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json (0ms)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json (1ms)
-[nitro]   ├─ /en/cms/gallery/poland (801ms)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /en/cms/books/java (799ms)
-[nitro]   ├─ /en/cms/books/php (803ms)
-[nitro]   ├─ /en/cms/books/java/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/php/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/it-books (804ms)
-[nitro]   ├─ /en/cms/books/it-books/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/java/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/php/_payload.json (1ms)
 [nitro]   ├─ /en/cms/books/it-books/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/woman (998ms)
-[nitro]   ├─ /en/cms/clothes/woman/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/woman/_payload.json (0ms)
-[nitro]   ├─ /en/cms/clothes/man (1100ms)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/sox (1102ms)
-[nitro]   ├─ /en/cms/clothes/sox/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json (0ms)
+[nitro]   ├─ /en/cms/gallery/greece (690ms)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json (1ms)
+[nitro]   ├─ /en/cms/books/java (990ms)
+[nitro]   ├─ /en/cms/books/java/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/books/java/_payload.json (1ms)
+[nitro]   ├─ /en/cms/gallery/poland (1004ms)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json (0ms)
+[nitro]   ├─ /en/cms/books/php (1088ms)
+[nitro]   ├─ /en/cms/books/php/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/man (1091ms)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/books/php/_payload.json (1ms)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json (1ms)
+[nitro]   ├─ /en/cms/clothes/woman (1196ms)
+[nitro]   ├─ /en/cms/clothes/woman/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/sox (1196ms)
+[nitro]   ├─ /en/cms/clothes/sox/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/woman/_payload.json (1ms)
 [nitro]   ├─ /en/cms/clothes/sox/_payload.json (0ms)
-[nitro]   ├─ /en/cms/books/english (1201ms)
-[nitro]   ├─ /en/cms/books/english/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /en/cms/books/english/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie (798ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie (898ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /pl/o/kontakt (996ms)
-[nitro]   ├─ /pl/o/kontakt/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/grecja (897ms)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/php (898ms)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna (900ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/o/kontakt/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/java (904ms)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/galeria/polska (908ms)
-[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (0ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (976ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /en/cms/books/english (1298ms)
+[nitro]   ├─ /en/cms/books/english/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/grecja (988ms)
+[nitro]   ├─ /pl/cms/galeria/polska (984ms)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (2ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/java (990ms)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (2ms)
+[nitro]   ├─ /en/cms/books/english/_payload.json (1ms)
+[nitro]   ├─ /pl/o/kontakt (1100ms)
+[nitro]   ├─ /pl/o/kontakt/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (2ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie (996ms)
 [nitro]   ├─ /pl/cms/galeria/polska/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (929ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery (992ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/kobieta (993ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie (1001ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ubrania/kobieta (998ms)
+[nitro]   ├─ /pl/cms/ksiazki/php (1002ms)
+[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (1ms)
+[nitro]   ├─ /pl/o/kontakt/_payload.json (0ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (1ms)
 [nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski (997ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?e556d82f-818a-46a5-b9f9-38962d88f3e7 (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna (1080ms)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery (1084ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski (1090ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?416e1a0e-13b7-4418-b17a-ef2c2b198ddf (0ms) (skipped)
 [nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json (0ms)
-[nitro] ℹ Prerendered 54 routes in 2.365 seconds
+[nitro] ℹ Prerendered 54 routes in 2.209 seconds
 [nitro] ✔ Generated public .output/public
 [nitro] ✔ You can preview this build using npx serve .output/public
 │
 └  ✨ You can now deploy .output/public to any static hosting!
 ==ts-node generate-sitemap.ts==
-[dotenv@17.3.1] injecting env (2) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (2) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
 ✅ Sitemap generated in .output/public/sitemap.xml

@@ -3,7 +3,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mountSuspended, registerEndpoint, mockNuxtImport } from '@nuxt/test-utils/runtime'
 import SlugPage from '~/pages/[...slug].vue'
 
-// Mock useRuntimeConfig – ustawiamy apiBase na względny
+// Mock useRoute to return the path from the test
+let mockRoutePath = '/en/cms/about/about-me'
+mockNuxtImport('useRoute', () => {
+  return () => ({
+    get path() { return mockRoutePath }
+  })
+})
+
+// Mock useRuntimeConfig
 mockNuxtImport('useRuntimeConfig', () => {
   return () => ({
     public: {
@@ -14,7 +22,7 @@ mockNuxtImport('useRuntimeConfig', () => {
   })
 })
 
-// Mock store (bez zmian)
+// Mock store with all necessary data
 const mockStore = {
   initialized: true,
   defaultLang: 'en',
@@ -40,6 +48,12 @@ const mockStore = {
     '/en/cms/about/about-me': 7,
     '/pl/cms/o-mnie/o-mnie': 7
   },
+  pageUrls: {
+    7: {
+      en: '/en/cms/about/about-me',
+      pl: '/pl/cms/o-mnie/o-mnie'
+    }
+  },
   init: vi.fn(),
   setCurrentLang: vi.fn((lang) => { mockStore.currentLang = lang }),
   fetchMenus: vi.fn(),
@@ -50,7 +64,7 @@ vi.mock('~/stores/app', () => ({
   useAppStore: () => mockStore
 }))
 
-// Rejestracja endpointów API – pełna ścieżka względna
+// Register page API endpoints
 registerEndpoint('/api/headless/page/7/en', {
   handler: () => ({
     success: true,
@@ -84,8 +98,9 @@ describe('Slug page', () => {
   })
 
   it('renders the correct page for /en/cms/about/about-me', async () => {
+    mockRoutePath = '/en/cms/about/about-me'
     const wrapper = await mountSuspended(SlugPage, {
-      route: '/en/cms/about/about-me'
+      route: mockRoutePath
     })
 
     expect(mockStore.setCurrentLang).toHaveBeenCalledWith('en')
@@ -94,8 +109,9 @@ describe('Slug page', () => {
   })
 
   it('renders the correct page for /pl/cms/o-mnie/o-mnie', async () => {
+    mockRoutePath = '/pl/cms/o-mnie/o-mnie'
     const wrapper = await mountSuspended(SlugPage, {
-      route: '/pl/cms/o-mnie/o-mnie'
+      route: mockRoutePath
     })
 
     expect(mockStore.setCurrentLang).toHaveBeenCalledWith('pl')
