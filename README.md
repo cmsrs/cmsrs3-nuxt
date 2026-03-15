@@ -22,9 +22,9 @@ This variable is used by the application to communicate with the CMS API.
 
 For more details about the CMS, visit:
 
-    https://github.com/cmsrs/cmsrs3
-    
-    https://cmsrs.pl
+- [cmsRS](https://cmsrs.pl)
+
+- [github cmsRS](https://github.com/cmsrs/cmsrs3)
 
 
 # Nuxt Minimal Starter
