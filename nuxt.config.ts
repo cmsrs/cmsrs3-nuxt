@@ -1,6 +1,6 @@
 //import { defineNuxtConfig } from 'nuxt'
 
-const domain = 'http://demo-headless.cmsrs.pl'
+const domain = process.env.NUXT_PUBLIC_DOMAIN || 'http://localhost:8080'
 
 export default defineNuxtConfig({
   compatibilityDate: '2026-02-24',

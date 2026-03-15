@@ -1,3 +1,32 @@
+# cmsrs3-nuxt
+
+Nuxt frontend for the **cmsrs3 headless CMS**.
+
+## Setup
+
+Copy the example environment configuration file:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the .env file and set the domain of your headless API, for example:
+
+```
+NUXT_PUBLIC_DOMAIN=http://headless-api.example.com
+```
+
+This variable is used by the application to communicate with the CMS API.
+
+## More information
+
+For more details about the CMS, visit:
+
+    https://github.com/cmsrs/cmsrs3
+    
+    https://cmsrs.pl
+
+
 # Nuxt Minimal Starter
 
 Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.

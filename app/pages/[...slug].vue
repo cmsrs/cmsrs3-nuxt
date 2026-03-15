@@ -38,6 +38,14 @@ if (!isHome && pageId) {
   page = pageResponse.data
 }
 
+// Komunikat productTestInfo w zależności od języka
+const productTestInfo = computed(() => {
+  return store.currentLang === 'pl'
+    ? 'Produkt testowy'
+    : 'Test Product'
+})
+
+
 // Dane formularza kontaktowego (tylko dla stron kontaktowych)
 const email = ref('')
 const message = ref('')
@@ -73,6 +81,14 @@ const contact = async (event: Event) => {
   }
 }
 </script>
+
+<style scoped>
+.product-test {
+  color: rgb(255, 80, 80);
+  font-weight: bold;
+}
+</style>
+
 
 <template>
   <div>
@@ -131,8 +147,9 @@ const contact = async (event: Event) => {
                   />
                 </a>
                 <ul class="ms-3 list-unstyled">
-                  <li class="product-test">{{ product.product_name }}</li>
-                  <li>Nazwa: <a :href="`/${store.defaultLang}${product.url}`">{{ product.product_name }}</a></li>
+                  <li class="product-test">{{ productTestInfo }}</li>                  
+                  <li>{{ product.product_name }}</li>
+                  <li>Nazwa: {{ product.product_name }}</li>
                   <li v-if="product.sku">Sku: {{ product.sku }}</li>
                   <li>Cena: {{ product.price_description }}</li>
                   <li v-if="product.product_description">{{ product.product_description }}</li>
