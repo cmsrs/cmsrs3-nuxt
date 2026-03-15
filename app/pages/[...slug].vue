@@ -36,6 +36,31 @@ if (!isHome && pageId) {
   const pageResponse: any = await $fetch(`${config.public.apiBase}/page/${pageId}/${store.currentLang}`)
   if (!pageResponse?.success) throw createError({ statusCode: 404 })
   page = pageResponse.data
+
+  const pageUrl = store.pageUrls[pageId]
+  useHead({
+    title: page.title,
+    meta: [
+      {
+        name: 'description',
+        content: page.description || page.title
+      }
+    ],
+    link: [
+      {
+        rel: 'canonical',
+        href: config.public.domain + (pageUrl?.[store.currentLang])
+      },
+      ...(store.langs.length > 1
+        ? store.langs.map(lang => ({
+            rel: 'alternate',
+            hreflang: lang,
+            href: config.public.domain + (pageUrl?.[lang])
+          }))
+        : [])
+    ]  
+  })
+
 }
 
 // Komunikat productTestInfo w zależności od języka

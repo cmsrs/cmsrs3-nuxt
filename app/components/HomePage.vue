@@ -21,6 +21,34 @@ const data = await fetchApi<any[]>(`${config.public.apiBase}/pages-type/main_pag
 const homePageData = data?.[0] || null
 
 
+if(homePageData.id){
+  const pageUrl = store.pageUrls[homePageData.id]
+  useHead({
+    title: homePageData.title?.[store.currentLang],
+    meta: [
+      {
+        name: 'description',
+        content: homePageData.description?.[store.currentLang] || homePageData.title?.[store.currentLang]
+      }
+    ],
+    link: [
+      {
+        rel: 'canonical',
+        href: config.public.domain + (pageUrl?.[store.currentLang])
+      },
+      ...(store.langs.length > 1
+        ? store.langs.map(lang => ({
+            rel: 'alternate',
+            hreflang: lang,
+            href: config.public.domain + (pageUrl?.[lang])
+          }))
+        : [])
+    ]  
+  })
+}
+
+
+
 // Komunikat demo w zależności od języka
 const demoAlertMessage = computed(() => {
   return store.currentLang === 'pl'
