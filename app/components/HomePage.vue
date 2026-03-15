@@ -35,7 +35,7 @@ const demoAlertMessage = computed(() => {
     <h1>{{ homePageData.title?.[lang] }}</h1>
 
     <!-- Alert demo -->
-    <div class="alert alert-danger" role="alert">
+    <div class="alert alert-danger mt-4 mb-4" role="alert">
       {{ demoAlertMessage }}
     </div>
 
@@ -48,7 +48,7 @@ const demoAlertMessage = computed(() => {
 
     <div class="row mt-4">
       <div v-for="box in boxes" :key="box.id" class="col-md-4">
-        <div class="card p-3 mb-3" v-html="box.content?.[store.currentLang!]"></div>
+        <div class="card p-3 mb-3" v-html="box.content?.[lang]"></div>
       </div>
     </div>
   </div>
