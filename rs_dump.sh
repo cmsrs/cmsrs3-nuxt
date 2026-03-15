@@ -29,7 +29,15 @@ cat nuxt.config.ts >> app_dump.txt
 echo -e "\n=== GIT DIFF (ostatnie zmiany) ===" >> app_dump.txt
 git diff app/ >> app_dump.txt
 
-cat app_dump.txt
 
+echo "==npm run test:run==" >> app_dump.txt
 npm run test:run >> app_dump.txt
 #npx vitest run tests/nuxt/index.test.ts
+
+echo "==npx nuxi generate==" >> app_dump.txt
+npx nuxi generate >>  app_dump.txt
+
+
+
+# ta linia jest na koncu
+cat app_dump.txt

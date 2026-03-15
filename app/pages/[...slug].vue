@@ -139,13 +139,11 @@ const contact = async (event: Event) => {
           <div v-for="product in page.products" :key="product.id" class="col-md-6 mb-5">
             <div class="row">
               <div class="col">
-                <a v-if="product.images?.length" :href="`/${store.defaultLang}${product.url}`">
                   <img 
                     class="m-3" 
                     :src="`${config.public.domain}${product.images[0].fs.medium}`"
                     :alt="product.images[0].alt || product.product_name"
                   />
-                </a>
                 <ul class="ms-3 list-unstyled">
                   <li class="product-test">{{ productTestInfo }}</li>                  
                   <li>{{ product.product_name }}</li>
