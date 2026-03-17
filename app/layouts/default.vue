@@ -18,6 +18,56 @@ const companyData = computed(() => {
   max-height: 40px;
   width: auto;
 }
+.footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* 🔥 MOBILE FIRST – wszystko pod sobą */
+.footer-left,
+.footer-center,
+.footer-right {
+  flex: 100%;
+  text-align: center;
+}
+
+/* 🔥 żeby długi tekst nie rozwalał layoutu */
+.footer-center {
+  overflow-wrap: anywhere;
+}
+
+/* 💻 większe ekrany */
+@media (min-width: 768px) {
+  .footer-left {
+    flex: 1;
+    text-align: left;
+  }
+
+  .footer-center {
+    flex: 2;
+    text-align: center;
+  }
+
+  .footer-right {
+    flex: 1;
+    text-align: right;
+  }
+}
+
+.footer-link {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #0d6efd;
+  text-decoration: underline;
+}
 </style>
 
 <template>
@@ -119,10 +169,28 @@ const companyData = computed(() => {
     </main>
 
     <!-- Stopka zawsze na dole -->
-    <footer class="bg-dark text-white text-center py-4 mt-5">
+    <footer class="bg-dark text-white py-4 mt-5">
       <div class="container">
-        <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
-        <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
+        <div class="footer-row">
+          
+          <!-- LEWA STRONA -->
+          <div class="footer-left">
+            <a href="https://www.cmsrs.pl" class="footer-link">
+              www.cmsrs.pl
+            </a>
+          </div>
+
+          <!-- ŚRODEK -->
+          <div class="footer-center">
+            <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
+          </div>
+
+          <!-- PRAWA STRONA -->
+          <div class="footer-right">
+            <p class="mb-0">&copy; 2026 cmsRS</p>
+          </div>
+
+        </div>
       </div>
     </footer>
   </div>

@@ -31,6 +31,10 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }        
+      ],      
       script: [
         {
           src: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
