@@ -10,21 +10,20 @@ Copy the example environment configuration file:
 cp .env.example .env
 ```
 
-Then edit the .env file and set the domain of your headless API, for example:
+Next, edit the .env file and set the domains for your headless API and Nuxt frontend. For example:
 
 ```
 NUXT_PUBLIC_DOMAIN=http://headless-api.example.com
-```
-
-This variable is used by the application to communicate with the CMS API.
-
-Nuxt page:
-
-```
 DOMAIN=http://nuxt.example.com
 ```
 
-Production build and create sitemap
+Start the Nuxt development server:
+
+```
+npm run dev
+```
+
+Build for production and generate the sitemap:
 
 ```
 npx nuxi generate

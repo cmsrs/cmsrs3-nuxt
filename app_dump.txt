@@ -1102,6 +1102,11 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
+      link: [
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
+      ],      
       script: [
         {
           src: 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
@@ -1112,99 +1117,6 @@ export default defineNuxtConfig({
   }
 })
 === GIT DIFF (ostatnie zmiany) ===
-diff --git a/app/layouts/default.vue b/app/layouts/default.vue
-index 7e4b19e..e0dc767 100644
---- a/app/layouts/default.vue
-+++ b/app/layouts/default.vue
-@@ -18,6 +18,56 @@ const companyData = computed(() => {
-   max-height: 40px;
-   width: auto;
- }
-+.footer-row {
-+  display: flex;
-+  align-items: center;
-+  justify-content: space-between;
-+  flex-wrap: wrap;
-+  gap: 10px;
-+}
-+
-+/* 🔥 MOBILE FIRST – wszystko pod sobą */
-+.footer-left,
-+.footer-center,
-+.footer-right {
-+  flex: 100%;
-+  text-align: center;
-+}
-+
-+/* 🔥 żeby długi tekst nie rozwalał layoutu */
-+.footer-center {
-+  overflow-wrap: anywhere;
-+}
-+
-+/* 💻 większe ekrany */
-+@media (min-width: 768px) {
-+  .footer-left {
-+    flex: 1;
-+    text-align: left;
-+  }
-+
-+  .footer-center {
-+    flex: 2;
-+    text-align: center;
-+  }
-+
-+  .footer-right {
-+    flex: 1;
-+    text-align: right;
-+  }
-+}
-+
-+.footer-link {
-+  color: #ffffff;
-+  text-decoration: none;
-+  font-weight: 500;
-+  transition: 0.2s ease;
-+}
-+
-+.footer-link:hover {
-+  color: #0d6efd;
-+  text-decoration: underline;
-+}
- </style>
- 
- <template>
-@@ -119,10 +169,28 @@ const companyData = computed(() => {
-     </main>
- 
-     <!-- Stopka zawsze na dole -->
--    <footer class="bg-dark text-white text-center py-4 mt-5">
-+    <footer class="bg-dark text-white py-4 mt-5">
-       <div class="container">
--        <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
--        <p v-else>&copy; 2025 cmsRS. Wszelkie prawa zastrzeżone.</p>
-+        <div class="footer-row">
-+          
-+          <!-- LEWA STRONA -->
-+          <div class="footer-left">
-+            <a href="https://www.cmsrs.pl" class="footer-link">
-+              www.cmsrs.pl
-+            </a>
-+          </div>
-+
-+          <!-- ŚRODEK -->
-+          <div class="footer-center">
-+            <div v-if="companyData" v-html="companyData.content?.[lang]"></div>
-+          </div>
-+
-+          <!-- PRAWA STRONA -->
-+          <div class="footer-right">
-+            <p class="mb-0">&copy; 2026 cmsRS</p>
-+          </div>
-+
-+        </div>
-       </div>
-     </footer>
-   </div>
 ==npm run test:run==
 
 > test:run
@@ -1216,24 +1128,24 @@ index 7e4b19e..e0dc767 100644
 [90mstdout[2m | tests/nuxt/slug.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
-[90mstdout[2m | tests/nuxt/useLocale.spec.ts
-[22m[39m<Suspense> is an experimental feature and its API will likely change.
-
- [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 350[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/index.test.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
+[90mstdout[2m | tests/nuxt/useLocale.spec.ts
+[22m[39m<Suspense> is an experimental feature and its API will likely change.
+
+ [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 355[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 172[2mms[22m[39m
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 192[2mms[22m[39m
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 288[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 192[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 205[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 300[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 09:54:14
-[2m   Duration [22m 1.10s[2m (transform 1.48s, setup 306ms, import 1.49s, tests 1.00s, environment 1.12s)[22m
+[2m   Start at [22m 19:02:22
+[2m   Duration [22m 1.11s[2m (transform 1.46s, setup 286ms, import 1.50s, tests 1.05s, environment 1.12s)[22m
 
 ==npx nuxi generate==
 ┌  Building Nuxt for production...
@@ -1263,102 +1175,102 @@ index 7e4b19e..e0dc767 100644
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CHxw_4Qb.js               5.35 kB │ gzip:  2.12 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/au8oRIiR.js              99.66 kB │ gzip: 30.06 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/LjW33kuV.js             195.50 kB │ gzip: 73.65 kB
-ℹ ✓ built in 1.85s
-✔ Client built in 1864ms
+ℹ ✓ built in 1.88s
+✔ Client built in 1888ms
 ℹ Building server...
 ℹ vite v7.3.1 building ssr environment for production...
 ℹ transforming...
 ℹ ✓ 112 modules transformed.
 ℹ rendering chunks...
-ℹ ✓ built in 722ms
-✔ Server built in 728ms
+ℹ ✓ built in 752ms
+✔ Server built in 759ms
 [nitro] ℹ Initializing prerenderer
 [nitro] ℹ Prerendering 3 initial routes with crawler
-[nitro]   ├─ /200.html (40ms)
-[nitro]   ├─ /404.html (40ms)
-[nitro]   ├─ / (266ms)
-[nitro]   ├─ /_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (9ms) (skipped)
-[nitro]   ├─ /_payload.json (9ms)
-[nitro]   ├─ /pl (383ms)
-[nitro]   ├─ /pl/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (4ms) (skipped)
+[nitro]   ├─ /200.html (48ms)
+[nitro]   ├─ /404.html (48ms)
+[nitro]   ├─ / (568ms)
+[nitro]   ├─ /_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (9ms) (skipped)
+[nitro]   ├─ /_payload.json (8ms)
+[nitro]   ├─ /en/o/contact-me (353ms)
+[nitro]   ├─ /en/o/contact-me/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /en/o/contact-me/_payload.json (1ms)
+[nitro]   ├─ /pl (363ms)
+[nitro]   ├─ /pl/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (4ms) (skipped)
 [nitro]   ├─ /pl/_payload.json (4ms)
-[nitro]   ├─ /en/o/contact-me (478ms)
-[nitro]   ├─ /en/o/contact-me/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /en/o/contact-me/_payload.json (0ms)
-[nitro]   ├─ /en/cms/about/about-me (482ms)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json (1ms)
-[nitro]   ├─ /en/cms/about/about-page (676ms)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/greece (675ms)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json (1ms)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json (1ms)
-[nitro]   ├─ /en/cms/gallery/poland (875ms)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/php (874ms)
-[nitro]   ├─ /en/cms/books/php/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/php/_payload.json (0ms)
-[nitro]   ├─ /en/cms/books/java (978ms)
-[nitro]   ├─ /en/cms/books/java/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /en/cms/books/it-books (979ms)
-[nitro]   ├─ /en/cms/books/it-books/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/java/_payload.json (0ms)
+[nitro]   ├─ /en/cms/about/about-me (658ms)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json (0ms)
+[nitro]   ├─ /en/cms/about/about-page (759ms)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json (0ms)
+[nitro]   ├─ /en/cms/books/it-books (762ms)
+[nitro]   ├─ /en/cms/books/it-books/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
 [nitro]   ├─ /en/cms/books/it-books/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/man (981ms)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json (0ms)
-[nitro]   ├─ /en/cms/clothes/woman (1070ms)
-[nitro]   ├─ /en/cms/clothes/woman/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/poland (854ms)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json (1ms)
+[nitro]   ├─ /en/cms/books/java (954ms)
+[nitro]   ├─ /en/cms/books/java/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/java/_payload.json (0ms)
+[nitro]   ├─ /en/cms/books/php (1058ms)
+[nitro]   ├─ /en/cms/books/php/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/greece (1058ms)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/man (1058ms)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /en/cms/books/php/_payload.json (1ms)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json (1ms)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json (1ms)
+[nitro]   ├─ /en/cms/clothes/woman (1165ms)
+[nitro]   ├─ /en/cms/clothes/woman/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/sox (1165ms)
+[nitro]   ├─ /en/cms/clothes/sox/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/english (1169ms)
+[nitro]   ├─ /en/cms/books/english/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
 [nitro]   ├─ /en/cms/clothes/woman/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/sox (1078ms)
-[nitro]   ├─ /en/cms/clothes/sox/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/english (1080ms)
-[nitro]   ├─ /en/cms/books/english/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (6ms) (skipped)
 [nitro]   ├─ /en/cms/clothes/sox/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/english/_payload.json (7ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie (889ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/grecja (893ms)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (2ms)
-[nitro]   ├─ /pl/o/kontakt (897ms)
-[nitro]   ├─ /pl/o/kontakt/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie (902ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (901ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /pl/o/kontakt/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ksiazki/php (902ms)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/english/_payload.json (0ms)
+[nitro]   ├─ /pl/o/kontakt (901ms)
+[nitro]   ├─ /pl/o/kontakt/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie (909ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie (904ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /pl/o/kontakt/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (1ms)
 [nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna (986ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery (990ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta (993ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/java (996ms)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/php (993ms)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/java (998ms)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna (995ms)
+[nitro]   ├─ /pl/cms/galeria/grecja (996ms)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/skarpery (996ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (999ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (1ms)
 [nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/galeria/polska (1004ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski (1005ms)
-[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?981d6c54-6866-4785-84c2-c8a5c067548b (1ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/polska/_payload.json (2ms)
+[nitro]   ├─ /pl/cms/galeria/polska (1003ms)
+[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (2ms)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski (1007ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/polska/_payload.json (1ms)
 [nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json (1ms)
-[nitro] ℹ Prerendered 54 routes in 2.111 seconds
+[nitro]   ├─ /pl/cms/ubrania/kobieta (1020ms)
+[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json (0ms)
+[nitro] ℹ Prerendered 54 routes in 2.435 seconds
 [nitro] ✔ Generated public .output/public
 [nitro] ✔ You can preview this build using npx serve .output/public
 │
 └  ✨ You can now deploy .output/public to any static hosting!
 ==ts-node generate-sitemap.ts==
-[dotenv@17.3.1] injecting env (2) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (2) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
 ✅ Sitemap generated in .output/public/sitemap.xml
