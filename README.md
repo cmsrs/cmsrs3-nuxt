@@ -3,6 +3,8 @@
     Modern CMS for websites and galleries, and even stores, without the chaos.
 </p>
 
+<br />
+<br />
 
 
 # cmsrs3-nuxt
