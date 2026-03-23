@@ -39,14 +39,6 @@ npx nuxi generate
 ts-node generate-sitemap.ts
 ```
 
-## More information
-
-For more details about the CMS, visit:
-
-- [cmsrs.pl](https://cmsrs.pl)
-
-- [github cmsrs3](https://github.com/cmsrs/cmsrs3)
-
 ## Server code 
 
 https://github.com/cmsrs/cmsrs3
