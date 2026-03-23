@@ -1,3 +1,10 @@
+<p align="center">
+    <img src="http://www.cmsrs.pl/images/cms/logo_cmsrs.png"><br/>
+    Modern CMS for websites and galleries, and even stores, without the chaos.
+</p>
+
+
+
 # cmsrs3-nuxt
 
 Nuxt frontend for the **cmsrs3 headless CMS**.
@@ -37,6 +44,10 @@ For more details about the CMS, visit:
 - [cmsrs.pl](https://cmsrs.pl)
 
 - [github cmsrs3](https://github.com/cmsrs/cmsrs3)
+
+## Server code 
+
+https://github.com/cmsrs/cmsrs3
 
 
 # Nuxt Minimal Starter
