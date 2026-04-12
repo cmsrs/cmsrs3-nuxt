@@ -1135,17 +1135,17 @@ export default defineNuxtConfig({
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
  [32m✓[39m tests/nuxt/useLocale.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 355[2mms[22m[39m
+ [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 179[2mms[22m[39m
 [90mstdout[2m | tests/nuxt/layout.spec.ts
 [22m[39m<Suspense> is an experimental feature and its API will likely change.
 
- [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 192[2mms[22m[39m
- [32m✓[39m tests/nuxt/index.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 205[2mms[22m[39m
- [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[32m 300[2mms[22m[39m
+ [32m✓[39m tests/nuxt/slug.spec.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 184[2mms[22m[39m
+ [32m✓[39m tests/nuxt/layout.spec.ts [2m([22m[2m1 test[22m[2m)[22m[33m 306[2mms[22m[39m
 
 [2m Test Files [22m [1m[32m4 passed[39m[22m[90m (4)[39m
 [2m      Tests [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m   Start at [22m 19:02:22
-[2m   Duration [22m 1.11s[2m (transform 1.46s, setup 286ms, import 1.50s, tests 1.05s, environment 1.12s)[22m
+[2m   Start at [22m 14:59:45
+[2m   Duration [22m 1.16s[2m (transform 1.67s, setup 323ms, import 1.63s, tests 1.02s, environment 1.11s)[22m
 
 ==npx nuxi generate==
 ┌  Building Nuxt for production...
@@ -1175,102 +1175,102 @@ export default defineNuxtConfig({
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/CHxw_4Qb.js               5.35 kB │ gzip:  2.12 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/au8oRIiR.js              99.66 kB │ gzip: 30.06 kB
 ℹ ../node_modules/.cache/nuxt/.nuxt/dist/client/_nuxt/LjW33kuV.js             195.50 kB │ gzip: 73.65 kB
-ℹ ✓ built in 1.88s
-✔ Client built in 1888ms
+ℹ ✓ built in 1.81s
+✔ Client built in 1820ms
 ℹ Building server...
 ℹ vite v7.3.1 building ssr environment for production...
 ℹ transforming...
 ℹ ✓ 112 modules transformed.
 ℹ rendering chunks...
-ℹ ✓ built in 752ms
-✔ Server built in 759ms
+ℹ ✓ built in 767ms
+✔ Server built in 773ms
 [nitro] ℹ Initializing prerenderer
 [nitro] ℹ Prerendering 3 initial routes with crawler
-[nitro]   ├─ /200.html (48ms)
-[nitro]   ├─ /404.html (48ms)
-[nitro]   ├─ / (568ms)
-[nitro]   ├─ /_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (9ms) (skipped)
-[nitro]   ├─ /_payload.json (8ms)
-[nitro]   ├─ /en/o/contact-me (353ms)
-[nitro]   ├─ /en/o/contact-me/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/o/contact-me/_payload.json (1ms)
-[nitro]   ├─ /pl (363ms)
-[nitro]   ├─ /pl/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (4ms) (skipped)
+[nitro]   ├─ /200.html (49ms)
+[nitro]   ├─ /404.html (50ms)
+[nitro]   ├─ / (518ms)
+[nitro]   ├─ /_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (9ms) (skipped)
+[nitro]   ├─ /_payload.json (9ms)
+[nitro]   ├─ /en/o/contact-me (357ms)
+[nitro]   ├─ /en/o/contact-me/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (2ms) (skipped)
+[nitro]   ├─ /en/o/contact-me/_payload.json (2ms)
+[nitro]   ├─ /pl (468ms)
+[nitro]   ├─ /pl/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (4ms) (skipped)
 [nitro]   ├─ /pl/_payload.json (4ms)
-[nitro]   ├─ /en/cms/about/about-me (658ms)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /en/cms/about/about-me/_payload.json (0ms)
-[nitro]   ├─ /en/cms/about/about-page (759ms)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /en/cms/about/about-page/_payload.json (0ms)
-[nitro]   ├─ /en/cms/books/it-books (762ms)
-[nitro]   ├─ /en/cms/books/it-books/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/it-books/_payload.json (1ms)
-[nitro]   ├─ /en/cms/gallery/poland (854ms)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/poland/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/java (954ms)
-[nitro]   ├─ /en/cms/books/java/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /en/cms/books/java/_payload.json (0ms)
-[nitro]   ├─ /en/cms/books/php (1058ms)
-[nitro]   ├─ /en/cms/books/php/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/cms/gallery/greece (1058ms)
-[nitro]   ├─ /en/cms/gallery/greece/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/man (1058ms)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/cms/books/php/_payload.json (1ms)
+[nitro]   ├─ /en/cms/gallery/greece (569ms)
+[nitro]   ├─ /en/cms/gallery/greece/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
 [nitro]   ├─ /en/cms/gallery/greece/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/man/_payload.json (1ms)
-[nitro]   ├─ /en/cms/clothes/woman (1165ms)
-[nitro]   ├─ /en/cms/clothes/woman/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/sox (1165ms)
-[nitro]   ├─ /en/cms/clothes/sox/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /en/cms/books/english (1169ms)
-[nitro]   ├─ /en/cms/books/english/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /en/cms/clothes/woman/_payload.json (1ms)
+[nitro]   ├─ /en/cms/about/about-page (657ms)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-page/_payload.json (1ms)
+[nitro]   ├─ /en/cms/about/about-me (667ms)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /en/cms/about/about-me/_payload.json (1ms)
+[nitro]   ├─ /en/cms/books/php (858ms)
+[nitro]   ├─ /en/cms/books/php/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /en/cms/books/it-books (859ms)
+[nitro]   ├─ /en/cms/books/it-books/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (6ms) (skipped)
+[nitro]   ├─ /en/cms/gallery/poland (862ms)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/php/_payload.json (1ms)
+[nitro]   ├─ /en/cms/books/it-books/_payload.json (6ms)
+[nitro]   ├─ /en/cms/gallery/poland/_payload.json (1ms)
+[nitro]   ├─ /en/cms/books/english (951ms)
+[nitro]   ├─ /en/cms/books/english/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /en/cms/books/java (953ms)
+[nitro]   ├─ /en/cms/books/java/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /en/cms/books/english/_payload.json (1ms)
+[nitro]   ├─ /en/cms/books/java/_payload.json (1ms)
+[nitro]   ├─ /en/cms/clothes/woman (959ms)
+[nitro]   ├─ /en/cms/clothes/woman/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/woman/_payload.json (0ms)
+[nitro]   ├─ /en/cms/clothes/sox (1156ms)
+[nitro]   ├─ /en/cms/clothes/sox/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/man (1158ms)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
 [nitro]   ├─ /en/cms/clothes/sox/_payload.json (1ms)
-[nitro]   ├─ /en/cms/books/english/_payload.json (0ms)
-[nitro]   ├─ /pl/o/kontakt (901ms)
-[nitro]   ├─ /pl/o/kontakt/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie (909ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie (904ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
+[nitro]   ├─ /en/cms/clothes/man/_payload.json (1ms)
+[nitro]   ├─ /pl/o/kontakt (898ms)
+[nitro]   ├─ /pl/o/kontakt/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
 [nitro]   ├─ /pl/o/kontakt/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie (791ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
 [nitro]   ├─ /pl/cms/o-mnie/o-mnie/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/ksiazki/php (993ms)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/java (998ms)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna (995ms)
-[nitro]   ├─ /pl/cms/galeria/grecja (996ms)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/skarpery (996ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (999ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
-[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (0ms)
-[nitro]   ├─ /pl/cms/galeria/polska (1003ms)
-[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (0ms) (skipped)
-[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (2ms)
-[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski (1007ms)
-[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/polska (802ms)
+[nitro]   ├─ /pl/cms/galeria/polska/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
 [nitro]   ├─ /pl/cms/galeria/polska/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie (898ms)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it (899ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/skarpery (897ms)
+[nitro]   ├─ /pl/cms/ksiazki/java (898ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /pl/cms/galeria/grecja (899ms)
+[nitro]   ├─ /pl/cms/ksiazki/php (900ms)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /pl/cms/o-mnie/o-stronie/_payload.json (0ms)
+[nitro]   ├─ /pl/cms/ubrania/skarpery/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/php/_payload.json (0ms)
+[nitro]   ├─ /pl/cms/ksiazki/ksiazki-it/_payload.json (0ms)
+[nitro]   ├─ /pl/cms/ksiazki/java/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/galeria/grecja/_payload.json (1ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski (988ms)
+[nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (1ms) (skipped)
 [nitro]   ├─ /pl/cms/ksiazki/angielski/_payload.json (1ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta (1020ms)
-[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?21e27051-26bb-43dc-ae13-23a8ab34c362 (1ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/kobieta (991ms)
+[nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna (992ms)
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json?97b7b497-c081-4bf6-924e-2664c1c1659f (0ms) (skipped)
 [nitro]   ├─ /pl/cms/ubrania/kobieta/_payload.json (0ms)
-[nitro] ℹ Prerendered 54 routes in 2.435 seconds
+[nitro]   ├─ /pl/cms/ubrania/mezczyzna/_payload.json (0ms)
+[nitro] ℹ Prerendered 54 routes in 2.473 seconds
 [nitro] ✔ Generated public .output/public
 [nitro] ✔ You can preview this build using npx serve .output/public
 │
 └  ✨ You can now deploy .output/public to any static hosting!
 ==ts-node generate-sitemap.ts==
-[dotenv@17.3.1] injecting env (2) from .env -- tip: 🛡️ auth for agents: https://vestauth.com
+[dotenv@17.3.1] injecting env (2) from .env -- tip: ⚙️  override existing env vars with { override: true }
 ✅ Sitemap generated in .output/public/sitemap.xml

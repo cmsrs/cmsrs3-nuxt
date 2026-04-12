@@ -37,7 +37,7 @@ npm run test:run >> app_dump.txt
 echo "==npx nuxi generate==" >> app_dump.txt
 npx nuxi generate >>  app_dump.txt
 
-
+echo "remember!!!! - change .env file"
 echo "==ts-node generate-sitemap.ts==" >> app_dump.txt
 ts-node generate-sitemap.ts >> app_dump.txt
 
